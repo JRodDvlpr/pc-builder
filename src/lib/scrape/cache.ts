@@ -4,6 +4,7 @@ import { getOffers, lastAttempts, logScrape, saveOffer } from '../db/queries'
 import { amazon } from './providers/amazon'
 import { newegg } from './providers/newegg'
 import { bestMatch, searchQueries } from './match'
+import { seedImage } from './seed-images'
 import type { Offer, PriceInfo, PriceProvider, PriceSource } from './types'
 
 export const PROVIDERS: PriceProvider[] = [newegg, amazon]
@@ -43,6 +44,10 @@ export function readPrices(partIds: string[]): Record<string, PriceInfo> {
         price: part.seedPrice,
         source: 'seed',
         fetchedAt: null,
+        // A part with no cached price can still have a picture. This is the
+        // common case on a cold start, so it is what stops a fresh deploy from
+        // rendering as a wall of category icons.
+        image: seedImage(partId),
         offers: [],
       }
       continue
@@ -50,8 +55,10 @@ export function readPrices(partIds: string[]): Record<string, PriceInfo> {
 
     const newest = Math.max(...chosen.map((o) => o.fetchedAt))
     const source: PriceSource = now - newest < FRESH_MS ? 'live' : 'cached'
-    // Any offer's thumbnail will do; prefer the one we are quoting.
-    const image = chosen.find((o) => o.image)?.image ?? offers.find((o) => o.image)?.image
+    // Any offer's thumbnail will do; prefer the one we are quoting. The committed
+    // map is the last resort, for a part whose listing carried no image at all.
+    const image =
+      chosen.find((o) => o.image)?.image ?? offers.find((o) => o.image)?.image ?? seedImage(partId)
     out[partId] = { partId, price: chosen[0].price, source, fetchedAt: newest, image, offers: chosen }
   }
 

@@ -45,6 +45,54 @@ describe('accepting the right listing', () => {
     expect(score).toBeGreaterThan(MATCH_THRESHOLD)
   })
 
+  it('matches a part whose catalog name carries a model year the listing omits', () => {
+    // Regression: "(2023)" became a required token, so every CX650 listing was
+    // rejected and the part fell back to its seed price forever.
+    const score = scoreListing(
+      part('psu-cx650'),
+      listing('Corsair CX650 80 Plus Bronze Non Modular Low-Noise ATX 650 Watt Power Supply - NA - Black'),
+    )
+    expect(score).toBeGreaterThan(MATCH_THRESHOLD)
+  })
+
+  it('still matches when the listing does spell the model year out', () => {
+    const score = scoreListing(
+      part('psu-cx650'),
+      listing('Corsair CX650 (2023) 80 Plus Bronze Non Modular Low-Noise ATX 650 Watt Power Supply'),
+    )
+    expect(score).toBeGreaterThan(MATCH_THRESHOLD)
+  })
+
+  it('ignores a parenthetical revision marker', () => {
+    // "M27Q (rev 2.0)" required the literal tokens "2" and "0".
+    const score = scoreListing(
+      part('mon-gigabyte-m27q'),
+      listing('GIGABYTE M27Q 27" 170Hz 1440P KVM Gaming Monitor, 2560 x 1440 SS IPS Display'),
+    )
+    expect(score).toBeGreaterThan(MATCH_THRESHOLD)
+  })
+
+  it('does not treat a memory kit capacity as a droppable aside', () => {
+    // The year/revision rule must not loosen "(2x16GB)", which is identifying.
+    const score = scoreListing(
+      part('mem-tz5-6000c30-32'),
+      listing('G.SKILL Trident Z5 Neo RGB Series AMD EXPO 96GB (2 x 48GB) 288-Pin PC RAM DDR5 6000 CL30'),
+    )
+    expect(score).toBeLessThan(MATCH_THRESHOLD)
+  })
+
+  it('matches a memory kit whose title omits the CAS latency', () => {
+    // Regression: Newegg encodes latency in the part number and never writes
+    // "CL30" in the title, so requiring it blocked the whole memory category.
+    const score = scoreListing(
+      part('mem-vengeance-rgb-6000c30-64'),
+      listing(
+        'CORSAIR Vengeance RGB 64GB (2 x 32GB) 288-Pin PC RAM DDR5 6000 (PC5 48000) Desktop Memory Model CMH64GX5M2B6000C30',
+      ),
+    )
+    expect(score).toBeGreaterThan(MATCH_THRESHOLD)
+  })
+
   it('matches a CPU listed with its full retail name', () => {
     const score = scoreListing(
       part('cpu-9950x3d'),
@@ -132,6 +180,15 @@ describe('rejecting the wrong listing', () => {
         listing('AMD Ryzen 7 9800X3D Desktop Processor 100-100001084WOF'),
       ),
     ).toBeGreaterThanOrEqual(0.95)
+  })
+
+  it('rejects a kit that states a different CAS latency', () => {
+    // Omitting the latency is fine; contradicting it is not.
+    const score = scoreListing(
+      part('mem-vengeance-rgb-6000c30-64'),
+      listing('CORSAIR Vengeance RGB 64GB (2 x 32GB) DDR5 6000 CL36 Desktop Memory'),
+    )
+    expect(score).toBe(0)
   })
 
   it('penalises refurbished stock', () => {

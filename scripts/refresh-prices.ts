@@ -6,9 +6,10 @@
  *
  *   npm run refresh:prices
  *   npm run refresh:prices -- --max 100
+ *   npm run refresh:prices -- --missing     retry everything with no price yet
  */
 import { ALL_PARTS, getPart } from '../src/lib/catalog'
-import { scrapeStats } from '../src/lib/db/queries'
+import { getOffers, scrapeStats } from '../src/lib/db/queries'
 import { needsRefresh, refreshPart } from '../src/lib/scrape/cache'
 
 function arg(name: string): string | undefined {
@@ -18,7 +19,16 @@ function arg(name: string): string | undefined {
 
 async function main() {
   const max = Number.parseInt(arg('max') ?? '150', 10)
-  const stale = needsRefresh(ALL_PARTS.map((p) => p.id)).slice(0, max)
+  const ids = ALL_PARTS.map((p) => p.id)
+
+  // A part that matched nothing is normally left alone for a day, which is the
+  // right default for a cron job but wrong right after the matcher or a provider
+  // has been fixed — the whole point then is to re-try exactly those parts.
+  const stale = (
+    process.argv.includes('--missing')
+      ? ((offers) => ids.filter((id) => (offers.get(id) ?? []).length === 0))(getOffers(ids))
+      : needsRefresh(ids)
+  ).slice(0, max)
 
   if (stale.length === 0) {
     console.log('Everything in the cache is still fresh — nothing to do.')

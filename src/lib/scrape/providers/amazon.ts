@@ -12,6 +12,28 @@ import type { PriceProvider, RawListing } from '../types'
  * still real listings for the product — but the matcher decides whether the row
  * is actually the part we asked for.
  */
+
+/**
+ * The product name, reassembled from however the card happens to be laid out.
+ *
+ * Amazon renders two shapes of result card. The older one puts the whole name in
+ * a single `h2`. The newer one splits it in two — a brand line ("Corsair") and a
+ * product line that *omits* the brand ("CX750 80 Plus Bronze …") — so reading
+ * only the first `h2` yields the bare brand, which matches nothing and silently
+ * cost us a price on every card of that shape. Joining every heading handles both
+ * without having to detect which one we got.
+ */
+function cardTitle($: cheerio.CheerioAPI, item: cheerio.Cheerio<never>): string {
+  const headings = $(item)
+    .find('h2')
+    .map((_, h) => $(h).text().trim())
+    .get()
+    .filter(Boolean)
+  if (headings.length > 0) return headings.join(' ')
+  // Layouts change; the thumbnail's alt text is the full name too, so it is a
+  // useful backstop when no heading is recognisable at all.
+  return $(item).find('img.s-image').first().attr('alt')?.trim() ?? ''
+}
 export const amazon: PriceProvider = {
   id: 'amazon',
 
@@ -23,7 +45,7 @@ export const amazon: PriceProvider = {
 
     $('[data-component-type="s-search-result"]').each((_, el) => {
       const item = $(el)
-      const title = item.find('h2').first().text().trim()
+      const title = cardTitle($, el as never)
       if (!title) return
 
       const priceBlock = item.find('.a-price').not('.a-text-price').first()

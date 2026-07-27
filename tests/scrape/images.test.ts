@@ -4,6 +4,9 @@ import { join } from 'node:path'
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
+import rawSeedImages from '../../data/seed-images.json'
+import { ALL_PARTS } from '@/lib/catalog'
+import { seedImage, seedImageCount } from '@/lib/scrape/seed-images'
 import type { Offer } from '@/lib/scrape/types'
 
 /**
@@ -84,9 +87,45 @@ describe('offer image persistence', () => {
     expect(info.image).toBe('https://cdn.example.com/5070.jpg')
   })
 
-  it('leaves the image undefined when nothing has been scraped', () => {
+  it('falls back to the committed image when nothing has been scraped', () => {
+    // The cold-start path, and on Vercel the common one: /tmp is wiped on every
+    // deploy, so without this the whole catalog would render as category icons.
     const info = cache.readPrices(['cpu-9600x'])['cpu-9600x']
     expect(info.source).toBe('seed')
-    expect(info.image).toBeUndefined()
+    expect(info.image).toBe(seedImage('cpu-9600x'))
+    expect(info.image).toMatch(/^https:\/\//)
+  })
+
+  it('prefers a scraped image over the committed one', () => {
+    // The committed URL can go stale; a live listing is always more current.
+    expect(seedImage('cpu-9800x3d')).toBeDefined()
+    const info = cache.readPrices(['cpu-9800x3d'])['cpu-9800x3d']
+    expect(info.image).toBe('https://cdn.example.com/9800x3d.png')
+  })
+
+  it('leaves the image undefined for a part the map does not cover', () => {
+    const uncovered = ALL_PARTS.find((p) => !seedImage(p.id) && p.id !== 'gpu-5070-fe')
+    if (!uncovered) return // full coverage is a fine reason to skip
+    expect(cache.readPrices([uncovered.id])[uncovered.id].image).toBeUndefined()
+  })
+})
+
+describe('the committed image map', () => {
+  it('covers most of the catalog', () => {
+    // A guard against the export script silently writing an near-empty file:
+    // that would degrade every part to an icon without failing anything else.
+    expect(seedImageCount()).toBeGreaterThan(ALL_PARTS.length * 0.75)
+  })
+
+  it('only contains parts that still exist', () => {
+    const ids = new Set(ALL_PARTS.map((p) => p.id))
+    const orphans = Object.keys(rawSeedImages).filter((id) => !ids.has(id))
+    expect(orphans).toEqual([])
+  })
+
+  it('stores absolute https URLs, never inlined image data', () => {
+    for (const url of Object.values(rawSeedImages as Record<string, string>)) {
+      expect(url).toMatch(/^https:\/\//)
+    }
   })
 })

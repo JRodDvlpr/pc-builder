@@ -12,7 +12,8 @@
     "test:e2e": "next build && playwright test",
     "seed:prices": "tsx scripts/seed-prices.ts",
     "refresh:prices": "tsx scripts/refresh-prices.ts",
-    "export:images": "tsx scripts/export-images.ts"
+    "export:images": "tsx scripts/export-images.ts",
+    "diagnose:match": "tsx scripts/diagnose-match.ts"
   },
   "dependencies": {
     "better-sqlite3": "^13.0.1",

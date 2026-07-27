@@ -136,19 +136,73 @@ function tokenise(s: string): string[] {
 }
 
 /**
+ * Parenthetical model-year and revision markers: "(2023)", "(rev 2.0)".
+ *
+ * These are how the catalog disambiguates a refresh from the model it replaced,
+ * but retailers list them inconsistently — Amazon writes "RM750e (2023)" and
+ * "CX650" for two products of the same vintage. Treating them as required meant
+ * every part carrying one could never match, which is why the PSUs were the
+ * worst-covered category. Note this deliberately does not touch other
+ * parentheticals: a memory kit's "(2x16GB)" really is identifying.
+ */
+const YEAR_OR_REV = /\((?:19|20)\d{2}\)|\(\s*rev\.?[^)]*\)/gi
+
+/**
+ * A memory kit's CAS latency, as written in a catalog model name: "CL30".
+ *
+ * Retailers systematically leave this out of the title and encode it in the part
+ * number instead — Newegg lists our CL30 kit as "DDR5 6000 (PC5 48000) … Model
+ * CMH64GX5M2B6000C30". Requiring it outright meant no DDR5 kit could ever match,
+ * which is why memory was the second worst-covered category.
+ */
+const CAS_TOKEN = /^cl\d+$/
+
+/**
  * Tokens a listing must contain to be considered the same product.
  * Model numbers (tokens with digits) carry the identity, so they are required;
- * short alphabetic tokens are treated as optional flavour.
+ * short alphabetic tokens are treated as optional flavour. CAS latency is
+ * handled separately — see `contradictsCas`.
  */
-function identifyingTokens(model: string): { required: string[]; optional: string[] } {
-  const tokens = tokenise(model)
+function identifyingTokens(model: string): {
+  required: string[]
+  optional: string[]
+  cas: string[]
+} {
+  const aside = model.match(YEAR_OR_REV)?.join(' ') ?? ''
+  const tokens = tokenise(model.replace(YEAR_OR_REV, ' '))
   const required: string[] = []
-  const optional: string[] = []
+  const cas: string[] = []
+  // A year or revision still counts in its favour when a listing does spell it
+  // out; it just no longer disqualifies the listings that don't.
+  const optional: string[] = tokenise(aside)
   for (const t of tokens) {
-    if (/\d/.test(t) || t.length >= 5) required.push(t)
+    if (CAS_TOKEN.test(t)) {
+      cas.push(t)
+      optional.push(t)
+    } else if (/\d/.test(t) || t.length >= 5) required.push(t)
     else optional.push(t)
   }
-  return { required: required.length > 0 ? required : tokens, optional }
+  return { required: required.length > 0 ? required : tokens, optional, cas }
+}
+
+/**
+ * Whether the listing states a CAS latency that is not ours.
+ *
+ * Absence of evidence is not evidence of mismatch: a title that names no latency
+ * at all tells us nothing and must not be rejected, or we lose the entire memory
+ * category. A title that names a *different* one is a genuine contradiction and
+ * is rejected outright.
+ *
+ * The residual risk is matching a sibling SKU that differs only in latency bin
+ * when neither title spells it out. That is accepted deliberately — such kits
+ * price within a percent or two of each other, and an exact part-number hit
+ * still outranks them, so the correct SKU wins whenever it is on the page.
+ */
+function contradictsCas(titleTokens: string[], cas: string[]): boolean {
+  if (cas.length === 0) return false
+  const stated = titleTokens.filter((t) => CAS_TOKEN.test(t))
+  if (stated.length === 0) return false
+  return !cas.some((t) => stated.includes(t))
 }
 
 export function scoreListing(part: Part, listing: RawListing): number {
@@ -167,7 +221,8 @@ export function scoreListing(part: Part, listing: RawListing): number {
   if (mpnNorm.length >= 6 && containsTokenRun(titleTokenList, mpnTokens)) {
     score = 0.95
   } else {
-    const { required, optional } = identifyingTokens(part.model)
+    const { required, optional, cas } = identifyingTokens(part.model)
+    if (contradictsCas(titleTokenList, cas)) return 0
     // Whole-token comparison only. Substring matching lets a "5-pack" part
     // match a 3-pack whose title merely contains a 5 somewhere, and lets
     // "Ryzen 9" match any title containing a 9950X3D.
