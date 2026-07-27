@@ -7,8 +7,16 @@ import Database from 'better-sqlite3'
  * SQLite holds only what actually changes: scraped offers, their history, and
  * saved builds. The parts catalog stays in committed JSON, so a fresh clone
  * needs no migration step and no seeding to be usable.
+ *
+ * On Vercel (and most serverless hosts) the deployment bundle is read-only —
+ * only /tmp is writable, and it is wiped between cold starts. That is fine
+ * here: the cache is a performance layer with a seed-price fallback already
+ * built in, so an emptied cache just means the next request re-scrapes rather
+ * than anything breaking.
  */
-const DB_PATH = process.env.PC_BUILDER_DB ?? join(process.cwd(), '.data', 'prices.db')
+const DB_PATH =
+  process.env.PC_BUILDER_DB ??
+  (process.env.VERCEL ? '/tmp/pc-builder/prices.db' : join(process.cwd(), '.data', 'prices.db'))
 
 const SCHEMA = `
 CREATE TABLE IF NOT EXISTS offers (

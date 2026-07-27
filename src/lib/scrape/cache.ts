@@ -136,12 +136,26 @@ function release() {
 }
 
 /**
- * Fire-and-forget refresh. Deliberately not awaited by the request handler —
- * results land in SQLite and reach the user on their next poll or page load.
+ * Kicks off (or joins) a refresh for each part and returns a promise that
+ * settles once all of them have.
+ *
+ * The caller is not meant to await this inline — that would put the scrape
+ * back on the response's critical path, the exact thing this cache exists to
+ * avoid. Route handlers instead hand it to `after()`, which lets the response
+ * return immediately while keeping the function alive just long enough for
+ * this to finish. On a long-running Node process a plain fire-and-forget call
+ * would work too, but `after()` is required for that to hold on serverless
+ * runtimes, where the process can be frozen the instant the response is sent.
  */
-export function refreshInBackground(partIds: string[]): void {
+export function refreshInBackground(partIds: string[]): Promise<void> {
+  const tasks: Promise<unknown>[] = []
+
   for (const partId of partIds) {
-    if (inFlight.has(partId)) continue
+    const existing = inFlight.get(partId)
+    if (existing) {
+      tasks.push(existing)
+      continue
+    }
     const part = getPart(partId)
     if (!part) continue
 
@@ -154,5 +168,8 @@ export function refreshInBackground(partIds: string[]): void {
       })
 
     inFlight.set(partId, task)
+    tasks.push(task)
   }
+
+  return Promise.all(tasks).then(() => undefined)
 }

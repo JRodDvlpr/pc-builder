@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, after } from 'next/server'
 
 import { needsRefresh, readPrices, refreshInBackground } from '@/lib/scrape/cache'
 import type { PriceResponse } from '@/lib/scrape/types'
@@ -34,7 +34,11 @@ export async function POST(request: Request) {
 
     if (process.env.PC_BUILDER_DISABLE_SCRAPE !== '1') {
       const stale = needsRefresh(partIds)
-      if (stale.length > 0) refreshInBackground(stale)
+      // `after()` keeps the function alive on serverless runtimes until this
+      // resolves. A plain fire-and-forget call works on a long-running Node
+      // process but is not reliable on Vercel, where the function can be
+      // frozen the instant the response below is sent.
+      if (stale.length > 0) after(() => refreshInBackground(stale))
     }
 
     return NextResponse.json({ prices } satisfies PriceResponse, {
