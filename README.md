@@ -33,6 +33,23 @@ an in-memory catalog, and prices stream into the table per row rather than block
 
 ---
 
+## Theming
+
+**Dark by default**, with a toggle in the header. Your choice is stored and wins on
+every later visit.
+
+The default deliberately ignores `prefers-color-scheme`. Chromium reports `light` both
+when a user genuinely prefers light *and* when no preference has been expressed, and
+the two are indistinguishable — so keying the default off it quietly sends most
+visitors to light. One click switches and it sticks.
+
+Both themes are full palettes, not one tinted twice: 22 matched design tokens each, and
+no component hardcodes a colour. `color-scheme` is set per theme so native scrollbars
+and checkboxes follow along, and the theme is applied by a blocking script in `<head>`
+so there is no flash of the wrong theme on load.
+
+---
+
 ## How prices work
 
 Specs are committed data; prices are scraped data. That split is the core design
@@ -85,7 +102,8 @@ from the wall, not the PSU.
 
 ```bash
 npm run test        # unit tests: compatibility rules + listing matcher
-npm run test:e2e    # Playwright: builds a full PC, forces a conflict, shares a link
+npm run test:e2e    # Playwright: builds a full PC, forces a conflict, shares a link,
+                    # and checks theming (default, persistence, no flash)
 ```
 
 The matcher tests use real listing titles captured from live searches, including the

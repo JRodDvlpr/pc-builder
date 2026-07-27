@@ -20,15 +20,19 @@ export const viewport: Viewport = {
 }
 
 /**
- * Applied before first paint so the page never flashes the wrong theme.
- * Dark is the default when the user has expressed no preference.
+ * Applied before first paint, in a blocking head script, so the page never
+ * flashes the wrong theme.
+ *
+ * Dark is the default. Deliberately not derived from `prefers-color-scheme`:
+ * Chromium reports `light` both for "the user prefers light" and for "no
+ * preference expressed", so an OS-driven default silently sends most visitors
+ * to light. An explicit choice from the toggle is stored and always wins.
  */
 const THEME_SCRIPT = `
 (function(){
   try {
     var stored = localStorage.getItem('theme');
-    var dark = stored ? stored === 'dark' : !window.matchMedia('(prefers-color-scheme: light)').matches;
-    document.documentElement.classList.toggle('dark', dark);
+    document.documentElement.classList.toggle('dark', stored !== 'light');
   } catch (e) {
     document.documentElement.classList.add('dark');
   }
