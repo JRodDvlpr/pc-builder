@@ -159,7 +159,7 @@ export function WattageMeter({
         >
           <button
             type="button"
-            className="mt-2 inline-flex items-center gap-1 text-[11px] text-text-muted transition-colors hover:text-text-secondary"
+            className="mt-2 inline-flex min-h-9 items-center gap-1 px-2 text-[11px] text-text-muted transition-colors hover:text-text-secondary sm:min-h-0 sm:px-0"
           >
             <Icons.bolt className="h-3 w-3" />
             {power.breakdown.length} component{power.breakdown.length === 1 ? '' : 's'} · see breakdown

@@ -27,7 +27,7 @@ function IssueCard({ issue }: { issue: Issue }) {
           <p className="mt-1 text-[13px] leading-relaxed text-text-secondary">{issue.detail}</p>
 
           {issue.partIds.length > 0 && (
-            <div className="mt-2 flex flex-wrap gap-1.5">
+            <div className="mt-2 flex min-w-0 flex-wrap gap-1.5">
               {[...new Set(issue.partIds)].map((partId) => {
                 const part = getPart(partId)
                 if (!part) return null
@@ -36,7 +36,7 @@ function IssueCard({ issue }: { issue: Issue }) {
                     key={partId}
                     type="button"
                     onClick={() => openPickerFor(part.category, partId)}
-                    className="inline-flex max-w-full items-center gap-1 rounded-md border border-border bg-surface px-1.5 py-1 text-[11px] font-medium text-text-secondary transition-colors hover:border-border-strong hover:text-text"
+                    className="inline-flex min-h-9 max-w-full min-w-0 items-center gap-1 rounded-md border border-border bg-surface px-2 py-1.5 text-[11px] font-medium text-text-secondary transition-colors hover:border-border-strong hover:text-text sm:min-h-0 sm:px-1.5 sm:py-1"
                     title={`Swap ${part.model}`}
                   >
                     <Icons.swap className="h-3 w-3 shrink-0" />
@@ -48,13 +48,13 @@ function IssueCard({ issue }: { issue: Issue }) {
           )}
 
           {issue.partIds.length === 0 && issue.categories.length > 0 && (
-            <div className="mt-2 flex flex-wrap gap-1.5">
+            <div className="mt-2 flex min-w-0 flex-wrap gap-1.5">
               {issue.categories.map((c) => (
                 <button
                   key={c}
                   type="button"
                   onClick={() => openPickerFor(c)}
-                  className="inline-flex items-center gap-1 rounded-md border border-border bg-surface px-1.5 py-1 text-[11px] font-medium text-text-secondary transition-colors hover:border-border-strong hover:text-text"
+                  className="inline-flex min-h-9 items-center gap-1 rounded-md border border-border bg-surface px-2 py-1.5 text-[11px] font-medium text-text-secondary transition-colors hover:border-border-strong hover:text-text sm:min-h-0 sm:px-1.5 sm:py-1"
                 >
                   <Icons.plus className="h-3 w-3" />
                   {CATEGORY_META[c].label}

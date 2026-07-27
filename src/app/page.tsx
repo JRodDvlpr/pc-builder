@@ -83,7 +83,7 @@ export default function BuilderPage() {
             )}
           </div>
 
-          <aside className="lg:sticky lg:top-[4.5rem] lg:self-start">
+          <aside className="min-w-0 lg:sticky lg:top-[4.5rem] lg:self-start">
             <BuildSummary report={report} />
           </aside>
         </div>

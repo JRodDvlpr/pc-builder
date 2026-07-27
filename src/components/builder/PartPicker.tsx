@@ -195,12 +195,12 @@ export function PartPicker({ category }: { category: Category }) {
       </header>
 
       <div className="flex items-center gap-3 border-b border-border bg-surface-2/50 px-3 py-2 sm:px-4">
-        <label className="flex cursor-pointer items-center gap-2 text-[13px] select-none">
+        <label className="flex min-h-9 cursor-pointer items-center gap-2 text-[13px] select-none sm:min-h-0">
           <input
             type="checkbox"
             checked={hideIncompatible}
             onChange={(e) => setHideIncompatible(e.target.checked)}
-            className="h-3.5 w-3.5 accent-[var(--accent)]"
+            className="h-4 w-4 accent-[var(--accent)]"
           />
           <span className="text-text-secondary">Hide incompatible</span>
           {incompatibleCount > 0 && (
@@ -223,11 +223,24 @@ export function PartPicker({ category }: { category: Category }) {
         )}
       </div>
 
-      <div className="flex min-h-0 flex-1">
+      {/* `relative` is load-bearing: the filter drawer below is absolutely
+          positioned, and without a positioned ancestor it resolved against the
+          viewport — covering the page header and clipping off the left edge. */}
+      <div className="relative flex min-h-0 flex-1">
+        {showFilters && (
+          <button
+            type="button"
+            aria-label="Close filters"
+            onClick={() => setShowFilters(false)}
+            className="absolute inset-0 z-20 bg-black/40 lg:hidden"
+          />
+        )}
         <aside
           className={cx(
             'w-56 shrink-0 overflow-y-auto border-r border-border p-3',
-            showFilters ? 'absolute inset-y-0 left-0 z-20 w-64 bg-surface shadow-float lg:static lg:shadow-none' : 'hidden lg:block',
+            showFilters
+              ? 'absolute inset-y-0 left-0 z-30 w-64 max-w-[85%] bg-surface shadow-float lg:static lg:z-auto lg:max-w-none lg:shadow-none'
+              : 'hidden lg:block',
           )}
         >
           {facets.map((facet) => {
@@ -252,7 +265,7 @@ export function PartPicker({ category }: { category: Category }) {
                       <li key={opt.value}>
                         <label
                           className={cx(
-                            'flex cursor-pointer items-center gap-2 rounded-md px-1.5 py-1 text-[13px] transition-colors',
+                            'flex min-h-9 cursor-pointer items-center gap-2 rounded-md px-1.5 py-1.5 text-[13px] transition-colors sm:min-h-0 sm:py-1',
                             checked ? 'bg-accent-soft text-text' : 'text-text-secondary hover:bg-surface-2',
                           )}
                         >
@@ -260,7 +273,7 @@ export function PartPicker({ category }: { category: Category }) {
                             type="checkbox"
                             checked={checked}
                             onChange={() => toggleFilter(facet.key, opt.value)}
-                            className="h-3.5 w-3.5 shrink-0 accent-[var(--accent)]"
+                            className="h-4 w-4 shrink-0 accent-[var(--accent)]"
                           />
                           <span className="min-w-0 flex-1 truncate">{opt.value}</span>
                           <span className="tnum shrink-0 text-[11px] text-text-muted">{opt.count}</span>
@@ -337,10 +350,24 @@ export function PartPicker({ category }: { category: Category }) {
                           <p className="mt-0.5 truncate text-[11px] text-text-muted md:hidden">
                             {columns.slice(0, 3).map((c) => c.value(part)).join(' · ')}
                           </p>
+                          {/* Touch has no hover, so the reason a part does not
+                              fit — the whole point of showing it at all — is
+                              rendered inline on small screens rather than being
+                              locked inside the tooltip. */}
+                          {(blocked || warned) && reason && (
+                            <p
+                              className={cx(
+                                'mt-1 text-[11px] leading-snug md:hidden',
+                                blocked ? 'text-danger' : 'text-warn',
+                              )}
+                            >
+                              {reason.title}
+                            </p>
+                          )}
                         </div>
                         {(blocked || warned) && reason && (
                           <Tooltip
-                            className="shrink-0"
+                            className="hidden shrink-0 md:inline-flex"
                             label={
                               <span>
                                 <span className="block font-medium">{reason.title}</span>
@@ -456,12 +483,12 @@ function SortHeader({
   className?: string
 }) {
   return (
-    <th className={cx('px-2 py-2 font-medium', numeric && 'text-right', className)}>
+    <th className={cx('px-2 py-2.5 font-medium sm:py-2', numeric && 'text-right', className)}>
       <button
         type="button"
         onClick={onClick}
         className={cx(
-          'inline-flex items-center gap-1 transition-colors hover:text-text',
+          'inline-flex min-h-8 items-center gap-1 transition-colors hover:text-text sm:min-h-0',
           active && 'text-text',
           numeric && 'flex-row-reverse',
         )}

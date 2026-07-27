@@ -81,7 +81,7 @@ export function PriceCell({
             target="_blank"
             rel="noopener noreferrer nofollow"
             onClick={(e) => e.stopPropagation()}
-            className="text-text-muted transition-colors hover:text-accent"
+            className="-m-2 inline-flex h-8 w-8 items-center justify-center text-text-muted transition-colors hover:text-accent sm:m-0 sm:h-auto sm:w-auto"
             aria-label={`Open on ${PROVIDER_LABELS[best.provider]}`}
           >
             <Icons.external className="h-3 w-3" />

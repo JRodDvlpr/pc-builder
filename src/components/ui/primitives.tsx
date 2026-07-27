@@ -76,7 +76,15 @@ export function Badge({
   )
 }
 
-/** CSS-only tooltip — no portal, no positioning library, no layout thrash. */
+/**
+ * CSS-only tooltip — no portal, no positioning library, no layout thrash.
+ *
+ * Shows on hover and on focus-within. The focus case matters for keyboard users
+ * and for touch, where `:hover` never fires: any focusable trigger (a button,
+ * a link) reveals the tooltip when tapped. Content that must be readable on a
+ * phone should not live in here alone — render it inline instead, since a
+ * non-focusable trigger stays hover-only.
+ */
 export function Tooltip({
   label,
   children,
@@ -96,7 +104,8 @@ export function Tooltip({
         className={cx(
           'pointer-events-none absolute left-1/2 z-50 hidden -translate-x-1/2 rounded-lg border border-border',
           'bg-elevated px-2.5 py-1.5 text-xs leading-snug font-normal text-text shadow-float',
-          'w-max max-w-[min(20rem,70vw)] text-left whitespace-normal group-hover/tip:block',
+          'w-max max-w-[min(20rem,70vw)] text-left whitespace-normal',
+          'group-hover/tip:block group-focus-within/tip:block',
           side === 'top' ? 'bottom-full mb-1.5' : 'top-full mt-1.5',
         )}
       >

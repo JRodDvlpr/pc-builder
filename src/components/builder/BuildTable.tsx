@@ -14,6 +14,12 @@ import { PriceCell } from './PriceCell'
  * The build itself: one row per category, always all ten visible so the shape of
  * a complete build is obvious from the first render rather than something you
  * discover by scrolling.
+ *
+ * Layout is `table-fixed` with responsive column widths. Auto table layout sizes
+ * columns to their content, which on a phone pushed the price and the row
+ * actions clean off the right edge — the two things you most need to see. On
+ * narrow screens the dedicated category column collapses and its label moves
+ * above the part name instead.
  */
 export function BuildTable({ report }: { report: CompatReport }) {
   const selection = useBuild((s) => s.selection)
@@ -36,7 +42,22 @@ export function BuildTable({ report }: { report: CompatReport }) {
 
   return (
     <div className="overflow-hidden rounded-2xl border border-border bg-surface shadow-card">
-      <table className="w-full border-collapse">
+      <table className="w-full table-fixed border-collapse">
+        {/*
+          Column widths must live here, not on the cells. `table-layout: fixed`
+          takes widths from the column elements or the first row — and the first
+          row is the `sr-only` thead below, which is absolutely positioned and so
+          contributes nothing. Without this colgroup the browser fell back to
+          splitting every column equally, which blew the table past the viewport
+          on phones. A zero-width first column collapses the category cell, which
+          is `display: none` below the `sm` breakpoint.
+        */}
+        <colgroup>
+          <col className="w-0 sm:w-48" />
+          <col />
+          <col className="w-[80px] sm:w-28" />
+          <col className="w-[88px] sm:w-24" />
+        </colgroup>
         <thead className="sr-only">
           <tr>
             <th>Component</th>
@@ -54,19 +75,19 @@ export function BuildTable({ report }: { report: CompatReport }) {
             if (rows.length === 0) {
               return (
                 <tr key={category} className="group border-b border-border/60 last:border-0">
-                  <td className="w-40 py-2.5 pr-2 pl-3 align-middle sm:w-48 sm:pl-4">
+                  <td className="p-0 align-middle sm:py-2.5 sm:pr-2 sm:pl-4">
                     <CategoryLabel category={category} flag={flag} />
                   </td>
-                  <td colSpan={3} className="py-2.5 pr-3 sm:pr-4">
+                  <td colSpan={3} className="py-2 pr-3 pl-3 sm:pr-4 sm:pl-0">
                     <button
                       type="button"
                       onClick={() => openPickerFor(category)}
-                      className="flex w-full items-center gap-2 rounded-lg border border-dashed border-border px-3 py-2 text-left text-[13px] text-text-muted transition-colors hover:border-accent hover:text-accent"
+                      className="flex min-h-11 w-full items-center gap-2 rounded-lg border border-dashed border-border px-3 text-left text-[13px] text-text-muted transition-colors hover:border-accent hover:text-accent"
                     >
-                      <Icons.plus className="h-3.5 w-3.5" />
-                      <span>Choose a {meta.singular}</span>
+                      <Icons.plus className="h-3.5 w-3.5 shrink-0" />
+                      <span className="truncate">Choose a {meta.singular}</span>
                       {meta.required && (
-                        <span className="ml-auto text-[11px] tracking-wide uppercase opacity-60">
+                        <span className="ml-auto shrink-0 text-[11px] tracking-wide uppercase opacity-60">
                           required
                         </span>
                       )}
@@ -78,7 +99,7 @@ export function BuildTable({ report }: { report: CompatReport }) {
 
             return rows.map((line, index) => (
               <tr key={`${category}-${line.part.id}`} className="border-b border-border/60 last:border-0">
-                <td className="w-40 py-2.5 pr-2 pl-3 align-top sm:w-48 sm:pl-4">
+                <td className="p-0 align-top sm:py-2.5 sm:pr-2 sm:pl-4">
                   {index === 0 ? (
                     <CategoryLabel category={category} flag={flag} />
                   ) : (
@@ -86,7 +107,35 @@ export function BuildTable({ report }: { report: CompatReport }) {
                   )}
                 </td>
 
-                <td className="min-w-0 py-2.5 pr-2">
+                <td className="min-w-0 py-2.5 pr-2 pl-3 align-top sm:pl-0">
+                  {/* The category column is hidden on phones, so the label and
+                      its status colour ride along with the part name instead. */}
+                  <p className="mb-0.5 flex items-center gap-1.5 sm:hidden">
+                    <Icon
+                      name={meta.icon as never}
+                      className={cx(
+                        'h-3 w-3 shrink-0',
+                        flag === 'error'
+                          ? 'text-danger'
+                          : flag === 'warning'
+                            ? 'text-warn'
+                            : 'text-text-muted',
+                      )}
+                    />
+                    <span
+                      className={cx(
+                        'truncate text-[11px] font-medium',
+                        flag === 'error'
+                          ? 'text-danger'
+                          : flag === 'warning'
+                            ? 'text-warn'
+                            : 'text-text-muted',
+                      )}
+                    >
+                      {meta.label}
+                    </span>
+                  </p>
+
                   <button
                     type="button"
                     onClick={() => openPickerFor(category, line.part.id)}
@@ -101,24 +150,47 @@ export function BuildTable({ report }: { report: CompatReport }) {
                   </button>
                 </td>
 
-                <td className="py-2.5 pr-2 text-right align-top whitespace-nowrap">
+                <td className="py-2.5 pr-1 text-right align-top sm:pr-2">
                   <PriceCell partId={line.part.id} seedPrice={line.part.seedPrice} />
                   {line.qty > 1 && (
                     <p className="tnum mt-0.5 text-[11px] text-text-muted">
-                      {line.qty} × = {formatUsd(line.lineTotal)}
+                      ×{line.qty} = {formatUsd(line.lineTotal)}
                     </p>
                   )}
                 </td>
 
-                <td className="w-24 py-2.5 pr-3 align-top sm:pr-4">
+                <td className="py-2.5 pr-2 align-top sm:pr-4">
                   <div className="flex items-center justify-end gap-0.5">
-                    {isMulti(category) && (
-                      <div className="mr-0.5 flex items-center rounded-md border border-border">
+                    <Tooltip label="Swap this part" side="top">
+                      <button
+                        type="button"
+                        onClick={() => openPickerFor(category, line.part.id)}
+                        className="flex h-9 w-9 items-center justify-center rounded-md text-text-muted transition-colors hover:bg-surface-2 hover:text-text sm:h-7 sm:w-7"
+                        aria-label={`Swap ${line.part.model}`}
+                      >
+                        <Icons.swap className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
+                      </button>
+                    </Tooltip>
+                    <Tooltip label="Remove" side="top">
+                      <button
+                        type="button"
+                        onClick={() => removePart(category, line.part.id)}
+                        className="flex h-9 w-9 items-center justify-center rounded-md text-text-muted transition-colors hover:bg-danger-soft hover:text-danger sm:h-7 sm:w-7"
+                        aria-label={`Remove ${line.part.model}`}
+                      >
+                        <Icons.trash className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
+                      </button>
+                    </Tooltip>
+                  </div>
+
+                  {isMulti(category) && (
+                    <div className="mt-1 flex items-center justify-end gap-1">
+                      <div className="flex items-center rounded-md border border-border">
                         <button
                           type="button"
                           onClick={() => setQty(category, line.part.id, line.qty - 1)}
-                          className="flex h-6 w-5 items-center justify-center text-text-muted transition-colors hover:text-text"
-                          aria-label="Decrease quantity"
+                          className="flex h-7 w-6 items-center justify-center text-text-muted transition-colors hover:text-text sm:h-6 sm:w-5"
+                          aria-label={`Decrease quantity of ${line.part.model}`}
                         >
                           −
                         </button>
@@ -126,34 +198,14 @@ export function BuildTable({ report }: { report: CompatReport }) {
                         <button
                           type="button"
                           onClick={() => setQty(category, line.part.id, line.qty + 1)}
-                          className="flex h-6 w-5 items-center justify-center text-text-muted transition-colors hover:text-text"
-                          aria-label="Increase quantity"
+                          className="flex h-7 w-6 items-center justify-center text-text-muted transition-colors hover:text-text sm:h-6 sm:w-5"
+                          aria-label={`Increase quantity of ${line.part.model}`}
                         >
                           +
                         </button>
                       </div>
-                    )}
-                    <Tooltip label="Swap this part" side="top">
-                      <button
-                        type="button"
-                        onClick={() => openPickerFor(category, line.part.id)}
-                        className="flex h-7 w-7 items-center justify-center rounded-md text-text-muted transition-colors hover:bg-surface-2 hover:text-text"
-                        aria-label={`Swap ${line.part.model}`}
-                      >
-                        <Icons.swap className="h-3.5 w-3.5" />
-                      </button>
-                    </Tooltip>
-                    <Tooltip label="Remove" side="top">
-                      <button
-                        type="button"
-                        onClick={() => removePart(category, line.part.id)}
-                        className="flex h-7 w-7 items-center justify-center rounded-md text-text-muted transition-colors hover:bg-danger-soft hover:text-danger"
-                        aria-label={`Remove ${line.part.model}`}
-                      >
-                        <Icons.trash className="h-3.5 w-3.5" />
-                      </button>
-                    </Tooltip>
-                  </div>
+                    </div>
+                  )}
 
                   {isMulti(category) && index === rows.length - 1 && (
                     <div className="mt-1 flex justify-end">
@@ -161,7 +213,7 @@ export function BuildTable({ report }: { report: CompatReport }) {
                         size="sm"
                         variant="ghost"
                         onClick={() => openPickerFor(category)}
-                        className="h-6 px-1.5 text-[11px]"
+                        className="h-7 px-1.5 text-[11px] sm:h-6"
                       >
                         <Icons.plus className="h-3 w-3" />
                         Add
@@ -181,7 +233,7 @@ export function BuildTable({ report }: { report: CompatReport }) {
 function CategoryLabel({ category, flag }: { category: Category; flag?: 'error' | 'warning' }) {
   const meta = CATEGORY_META[category]
   return (
-    <span className="flex items-center gap-2">
+    <span className="hidden items-center gap-2 sm:flex">
       <span
         className={cx(
           'flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border',

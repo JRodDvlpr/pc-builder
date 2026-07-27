@@ -46,10 +46,14 @@ export default defineConfig({
 })
 
 function existsOrUndefined(path: string) {
+  // Chromium refuses to start its sandbox as root, which is how containers and
+  // CI images usually run. Only opt out when we actually are root.
+  const args = typeof process.getuid === 'function' && process.getuid() === 0 ? ['--no-sandbox'] : []
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    return require('node:fs').existsSync(path) ? { executablePath: path } : undefined
+    const exists = require('node:fs').existsSync(path)
+    return exists ? { executablePath: path, args } : { args }
   } catch {
-    return undefined
+    return { args }
   }
 }
