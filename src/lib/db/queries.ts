@@ -9,6 +9,7 @@ interface OfferRow {
   title: string
   in_stock: number
   match_score: number
+  image: string | null
   fetched_at: number
 }
 
@@ -21,6 +22,7 @@ function toOffer(row: OfferRow): Offer {
     title: row.title,
     inStock: row.in_stock === 1,
     matchScore: row.match_score,
+    image: row.image ?? undefined,
     fetchedAt: row.fetched_at,
   }
 }
@@ -45,13 +47,15 @@ export function getOffers(partIds: string[]): Map<string, Offer[]> {
 export function saveOffer(offer: Offer): void {
   const db = getDb()
   db.prepare(
-    `INSERT INTO offers (part_id, provider, price, url, title, in_stock, match_score, fetched_at)
-     VALUES (@partId, @provider, @price, @url, @title, @inStock, @matchScore, @fetchedAt)
+    `INSERT INTO offers (part_id, provider, price, url, title, in_stock, match_score, image, fetched_at)
+     VALUES (@partId, @provider, @price, @url, @title, @inStock, @matchScore, @image, @fetchedAt)
      ON CONFLICT(part_id, provider) DO UPDATE SET
        price = excluded.price, url = excluded.url, title = excluded.title,
        in_stock = excluded.in_stock, match_score = excluded.match_score,
+       -- Keep a previously captured thumbnail if this scrape did not find one.
+       image = COALESCE(excluded.image, offers.image),
        fetched_at = excluded.fetched_at`,
-  ).run({ ...offer, inStock: offer.inStock ? 1 : 0 })
+  ).run({ ...offer, inStock: offer.inStock ? 1 : 0, image: offer.image ?? null })
 
   // Only append to history when the price actually moved, so the chart is
   // change points rather than one row per scrape.

@@ -8,6 +8,7 @@ import { CATEGORIES, CATEGORY_META, type Category } from '@/lib/catalog/types'
 import type { CompatReport } from '@/lib/compat/types'
 import { Icon, Icons } from '@/components/ui/icons'
 import { Button, Tooltip, cx } from '@/components/ui/primitives'
+import { PartImage } from './PartImage'
 import { PriceCell } from './PriceCell'
 
 /**
@@ -49,8 +50,9 @@ export function BuildTable({ report }: { report: CompatReport }) {
           row is the `sr-only` thead below, which is absolutely positioned and so
           contributes nothing. Without this colgroup the browser fell back to
           splitting every column equally, which blew the table past the viewport
-          on phones. A zero-width first column collapses the category cell, which
-          is `display: none` below the `sm` breakpoint.
+          on phones. The first column is collapsed to zero width on phones rather
+          than hidden — a `display: none` cell stops occupying a column slot,
+          which shifts every subsequent width onto the wrong column.
         */}
         <colgroup>
           <col className="w-0 sm:w-48" />
@@ -139,14 +141,22 @@ export function BuildTable({ report }: { report: CompatReport }) {
                   <button
                     type="button"
                     onClick={() => openPickerFor(category, line.part.id)}
-                    className="block w-full text-left"
+                    className="flex w-full items-start gap-2.5 text-left"
                   >
-                    <p className="truncate text-sm font-medium transition-colors hover:text-accent">
-                      <span className="text-text-muted">{line.part.brand}</span> {line.part.model}
-                    </p>
-                    <p className="mt-0.5 truncate text-[11px] text-text-muted">
-                      {specSummary(line.part)}
-                    </p>
+                    <PartImage
+                      partId={line.part.id}
+                      category={category}
+                      className="mt-0.5 h-10 w-10"
+                      iconClassName="h-4 w-4"
+                    />
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-medium transition-colors hover:text-accent">
+                        <span className="text-text-muted">{line.part.brand}</span> {line.part.model}
+                      </span>
+                      <span className="mt-0.5 block truncate text-[11px] text-text-muted">
+                        {specSummary(line.part)}
+                      </span>
+                    </span>
                   </button>
                 </td>
 

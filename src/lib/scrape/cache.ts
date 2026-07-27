@@ -50,7 +50,9 @@ export function readPrices(partIds: string[]): Record<string, PriceInfo> {
 
     const newest = Math.max(...chosen.map((o) => o.fetchedAt))
     const source: PriceSource = now - newest < FRESH_MS ? 'live' : 'cached'
-    out[partId] = { partId, price: chosen[0].price, source, fetchedAt: newest, offers: chosen }
+    // Any offer's thumbnail will do; prefer the one we are quoting.
+    const image = chosen.find((o) => o.image)?.image ?? offers.find((o) => o.image)?.image
+    out[partId] = { partId, price: chosen[0].price, source, fetchedAt: newest, image, offers: chosen }
   }
 
   return out
@@ -97,6 +99,7 @@ export async function refreshPart(part: Part, signal?: AbortSignal): Promise<num
           title: match.listing.title,
           inStock: match.listing.inStock,
           matchScore: match.score,
+          image: match.listing.image,
           fetchedAt: Date.now(),
         }
         saveOffer(offer)

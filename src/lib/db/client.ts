@@ -27,6 +27,7 @@ CREATE TABLE IF NOT EXISTS offers (
   title       TEXT NOT NULL,
   in_stock    INTEGER NOT NULL DEFAULT 1,
   match_score REAL NOT NULL,
+  image       TEXT,
   fetched_at  INTEGER NOT NULL,
   PRIMARY KEY (part_id, provider)
 );
@@ -70,5 +71,19 @@ export function getDb(): Database.Database {
   db.pragma('journal_mode = WAL')
   db.pragma('busy_timeout = 5000')
   db.exec(SCHEMA)
+  migrate(db)
   return db
+}
+
+/**
+ * Additive migrations for databases created before a column existed. SQLite has
+ * no `ADD COLUMN IF NOT EXISTS`, so check the table shape first. Cheap enough to
+ * run on every open, and it keeps a developer's existing cache working instead
+ * of making them delete it.
+ */
+function migrate(database: Database.Database) {
+  const columns = database.prepare('PRAGMA table_info(offers)').all() as { name: string }[]
+  if (!columns.some((c) => c.name === 'image')) {
+    database.exec('ALTER TABLE offers ADD COLUMN image TEXT')
+  }
 }

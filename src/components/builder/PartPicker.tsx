@@ -11,6 +11,7 @@ import { CATEGORY_META, type Category, type Part } from '@/lib/catalog/types'
 import { buildWithout, candidateVerdict, resolveBuild } from '@/lib/compat/engine'
 import { Icons } from '@/components/ui/icons'
 import { Badge, Button, Tooltip, cx } from '@/components/ui/primitives'
+import { PartImage } from './PartImage'
 import { PriceCell } from './PriceCell'
 
 const PAGE_SIZE = 60
@@ -343,6 +344,12 @@ export function PartPicker({ category }: { category: Category }) {
                   >
                     <td className="py-2 pr-2 pl-3 sm:pl-4">
                       <div className="flex items-start gap-2">
+                        <PartImage
+                          partId={part.id}
+                          category={category}
+                          className="mt-0.5 h-9 w-9"
+                          iconClassName="h-4 w-4"
+                        />
                         <div className="min-w-0">
                           <p className="truncate text-[13px] leading-snug font-medium">
                             <span className="text-text-muted">{part.brand}</span> {part.model}

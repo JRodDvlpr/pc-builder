@@ -31,6 +31,8 @@ export interface Offer {
   title: string
   /** 0–1 confidence that this listing really is the catalog part. */
   matchScore: number
+  /** Retailer CDN thumbnail, when the listing had one. */
+  image?: string
   /** Epoch milliseconds. */
   fetchedAt: number
 }
@@ -50,6 +52,8 @@ export interface PriceInfo {
   price: number
   source: PriceSource
   fetchedAt: number | null
+  /** First product thumbnail found across this part's offers, if any. */
+  image?: string
   offers: Offer[]
 }
 
