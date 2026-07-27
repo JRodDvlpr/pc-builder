@@ -28,10 +28,14 @@ const ACCESSORY_TERMS = [
   'decal',
   'skin',
   'dust cover',
+  'dust filter',
+  'filter kit',
   'screw',
   'thermal pad',
   'mounting kit',
   'replacement fan',
+  'extension cable',
+  'adapter cable',
   'compatible with',
   'fits for',
   'for asus',
@@ -101,6 +105,30 @@ function normaliseMpn(s: string): string {
   return s.toLowerCase().replace(/[^a-z0-9]/g, '')
 }
 
+/**
+ * Whether the part number appears in the title as a run of whole tokens.
+ *
+ * A plain substring test on the punctuation-stripped strings matched
+ * "LANCOOL 216" inside "LANCOOL 216RX" and priced a different case. Checking
+ * character boundaries cannot fix that, because stripping punctuation is what
+ * removed the boundaries in the first place — "lianlilancool216black" has none.
+ *
+ * Comparing token runs keeps both properties we need: "100-100001084WOF" still
+ * matches a title that writes it the same way (both tokenise to
+ * `100 · 100001084wof`), while "lancool · 216" no longer matches
+ * `lancool · 216rx`, because `216` and `216rx` are different tokens.
+ */
+function containsTokenRun(titleTokens: string[], needle: string[]): boolean {
+  if (needle.length === 0 || needle.length > titleTokens.length) return false
+  outer: for (let i = 0; i <= titleTokens.length - needle.length; i++) {
+    for (let j = 0; j < needle.length; j++) {
+      if (titleTokens[i + j] !== needle[j]) continue outer
+    }
+    return true
+  }
+  return false
+}
+
 function tokenise(s: string): string[] {
   return normalise(s)
     .split(' ')
@@ -125,7 +153,8 @@ function identifyingTokens(model: string): { required: string[]; optional: strin
 
 export function scoreListing(part: Part, listing: RawListing): number {
   const title = normalise(listing.title)
-  const titleTokens = new Set(title.split(' '))
+  const titleTokenList = title.split(' ')
+  const titleTokens = new Set(titleTokenList)
 
   for (const term of [...ACCESSORY_TERMS, ...BUNDLE_TERMS]) {
     if (title.includes(normalise(term))) return 0
@@ -133,9 +162,9 @@ export function scoreListing(part: Part, listing: RawListing): number {
 
   // An exact MPN in the title is as certain as this gets.
   const mpnNorm = normaliseMpn(part.mpn)
-  const titleNorm = normaliseMpn(listing.title)
+  const mpnTokens = normalise(part.mpn).split(' ').filter(Boolean)
   let score: number
-  if (mpnNorm.length >= 6 && titleNorm.includes(mpnNorm)) {
+  if (mpnNorm.length >= 6 && containsTokenRun(titleTokenList, mpnTokens)) {
     score = 0.95
   } else {
     const { required, optional } = identifyingTokens(part.model)

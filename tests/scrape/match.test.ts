@@ -92,6 +92,48 @@ describe('rejecting the wrong listing', () => {
     expect(scoreListing(part('gpu-5070-ventus'), ti)).toBeLessThan(MATCH_THRESHOLD)
   })
 
+  it('rejects a variant suffix on the part number', () => {
+    // Regression: a substring test matched "LANCOOL 216" inside "LANCOOL 216RX"
+    // and priced a different case at full confidence.
+    const rx = listing(
+      'LIAN LI LANCOOL 216RX Black Steel / Tempered Glass ATX Mid Tower Computer Case, 2x 16 cm ARGB Fans Included',
+    )
+    expect(scoreListing(part('case-lancool-216'), rx)).toBeLessThan(MATCH_THRESHOLD)
+  })
+
+  it('still accepts the exact case it is looking for', () => {
+    const exact = listing(
+      'LIAN LI LANCOOL 216 Black Steel / Tempered Glass ATX Mid Tower Computer Case',
+    )
+    expect(scoreListing(part('case-lancool-216'), exact)).toBeGreaterThan(MATCH_THRESHOLD)
+  })
+
+  it('rejects a dust filter kit sold under the case name', () => {
+    // Regression: this was matched at 0.95 and showed the case as costing $14.99.
+    expect(
+      scoreListing(
+        part('case-lancool-216'),
+        listing('Lian-li Lan216-2x Lancool 216 Dust Filter Kit Black Retail', 14.99),
+      ),
+    ).toBe(0)
+  })
+
+  it('keeps matching part numbers that contain punctuation', () => {
+    // The token-run check must not break MPNs written with dashes or slashes.
+    expect(
+      scoreListing(
+        part('ssd-990pro-1tb'),
+        listing('SAMSUNG 990 PRO M.2 2280 1TB PCIe 4.0 NVMe SSD MZ-V9P1T0B/AM'),
+      ),
+    ).toBeGreaterThanOrEqual(0.95)
+    expect(
+      scoreListing(
+        part('cpu-9800x3d'),
+        listing('AMD Ryzen 7 9800X3D Desktop Processor 100-100001084WOF'),
+      ),
+    ).toBeGreaterThanOrEqual(0.95)
+  })
+
   it('penalises refurbished stock', () => {
     const newItem = listing('SAMSUNG 990 PRO SSD 1TB PCIe 4.0 M.2 2280 Internal Solid State Drive')
     const refurb = listing('Refurbished: SAMSUNG 990 PRO SSD 1TB PCIe 4.0 M.2 2280 Internal Solid State Drive')

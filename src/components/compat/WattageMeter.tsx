@@ -71,8 +71,8 @@ export function WattageMeter({
           <path
             d={arcPath(START_ANGLE, START_ANGLE + SWEEP)}
             fill="none"
-            stroke="var(--surface-2)"
-            strokeWidth={11}
+            stroke="var(--surface-3)"
+            strokeWidth={13}
             strokeLinecap="round"
           />
           {pct > 0.005 && (
@@ -80,7 +80,7 @@ export function WattageMeter({
               d={arcPath(START_ANGLE, valueEnd)}
               fill="none"
               stroke={strokeVar}
-              strokeWidth={11}
+              strokeWidth={13}
               strokeLinecap="round"
               style={{ transition: 'd 400ms cubic-bezier(0.22,1,0.36,1)' }}
             />

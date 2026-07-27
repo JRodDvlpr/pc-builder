@@ -10,8 +10,8 @@ type Variant = 'primary' | 'secondary' | 'ghost' | 'danger'
 type Size = 'sm' | 'md'
 
 const VARIANTS: Record<Variant, string> = {
-  primary: 'bg-accent text-accent-fg hover:bg-accent-hover',
-  secondary: 'bg-surface-2 text-text border border-border hover:border-border-strong',
+  primary: 'bg-accent text-accent-fg shadow-card hover:bg-accent-hover',
+  secondary: 'bg-surface-2 text-text border border-border hover:border-border-strong hover:bg-surface-3',
   ghost: 'text-text-secondary hover:bg-surface-2 hover:text-text',
   danger: 'text-danger hover:bg-danger-soft',
 }
@@ -66,7 +66,7 @@ export function Badge({
   return (
     <span
       className={cx(
-        'inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[11px] font-medium whitespace-nowrap',
+        'inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[11px] font-medium whitespace-nowrap',
         TONES[tone],
         className,
       )}
@@ -103,7 +103,7 @@ export function Tooltip({
         role="tooltip"
         className={cx(
           'pointer-events-none absolute left-1/2 z-50 hidden -translate-x-1/2 rounded-lg border border-border',
-          'bg-elevated px-2.5 py-1.5 text-xs leading-snug font-normal text-text shadow-float',
+          'bg-elevated px-3 py-2 text-xs leading-snug font-normal text-text shadow-float',
           'w-max max-w-[min(20rem,70vw)] text-left whitespace-normal',
           'group-hover/tip:block group-focus-within/tip:block',
           side === 'top' ? 'bottom-full mb-1.5' : 'top-full mt-1.5',

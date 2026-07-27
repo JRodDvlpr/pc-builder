@@ -39,8 +39,8 @@ export function BuildSummary({ report }: { report: CompatReport }) {
   }
 
   return (
-    <div className="space-y-4">
-      <section className="rounded-2xl border border-border bg-surface p-4 shadow-card">
+    <div className="space-y-5">
+      <section className="rounded-2xl border border-border bg-surface p-5 shadow-card">
         <div className="flex items-baseline justify-between gap-2">
           <h2 className="text-xs font-semibold tracking-wider text-text-muted uppercase">Total</h2>
           <span className="tnum text-[11px] text-text-muted">
@@ -49,16 +49,16 @@ export function BuildSummary({ report }: { report: CompatReport }) {
         </div>
         <p
           data-testid="build-total"
-          className="tnum mt-1 text-3xl font-semibold tracking-tight tabular-nums"
+          className="tnum mt-1.5 text-4xl font-semibold tracking-[-0.02em] tabular-nums"
         >
           {formatUsd(total)}
         </p>
-        <p className="mt-1 text-[11px] leading-relaxed text-text-muted">
+        <p className="mt-2 text-[11px] leading-relaxed text-text-muted">
           Live prices from Newegg and Amazon where a listing matched; catalog reference
           prices otherwise. Excludes tax and shipping.
         </p>
 
-        <div className="mt-3 flex gap-2">
+        <div className="mt-4 flex gap-2">
           <Button size="sm" variant="secondary" onClick={share} disabled={empty} className="flex-1">
             {copied ? <Icons.check className="h-3.5 w-3.5" /> : <Icons.link className="h-3.5 w-3.5" />}
             {copied ? 'Link copied' : 'Share build'}
@@ -71,7 +71,7 @@ export function BuildSummary({ report }: { report: CompatReport }) {
 
       <section
         className={cx(
-          'rounded-2xl border bg-surface p-4 shadow-card transition-colors',
+          'rounded-2xl border bg-surface p-5 shadow-card transition-colors',
           !report.buildable ? 'border-danger/30' : 'border-border',
         )}
       >
@@ -85,7 +85,7 @@ export function BuildSummary({ report }: { report: CompatReport }) {
         />
       </section>
 
-      <section className="rounded-2xl border border-border bg-surface p-4 shadow-card">
+      <section className="rounded-2xl border border-border bg-surface p-5 shadow-card">
         <IssueList report={report} />
       </section>
     </div>

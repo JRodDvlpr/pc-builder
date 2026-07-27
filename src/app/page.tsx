@@ -47,16 +47,18 @@ export default function BuilderPage() {
   return (
     <div className="min-h-dvh">
       <header className="sticky top-0 z-30 border-b border-border bg-bg/85 backdrop-blur-md">
-        <div className="mx-auto flex h-14 max-w-[1400px] items-center gap-3 px-3 sm:px-6">
-          <Link href="/" className="flex items-center gap-2">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent text-accent-fg">
-              <Icons.cpu className="h-[18px] w-[18px]" />
+        <div className="mx-auto flex h-16 max-w-[1400px] items-center gap-3 px-3 sm:px-6">
+          <Link href="/" className="flex items-center gap-2.5">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent text-accent-fg shadow-card">
+              <Icons.cpu className="h-5 w-5" />
             </span>
-            <span className="text-[15px] font-semibold tracking-tight">PC Builder</span>
+            <span className="text-base font-semibold tracking-[-0.015em]">PC Builder</span>
           </Link>
 
-          <span className="hidden text-[13px] text-text-muted lg:block">
-            {CATALOG_SIZE} parts · live compatibility · live prices
+          <span className="hidden items-center gap-2 border-l border-border pl-3 text-[13px] text-text-muted lg:flex">
+            <span className="tnum font-medium text-text-secondary">{CATALOG_SIZE}</span> parts
+            <span className="text-border-strong">·</span> live compatibility
+            <span className="text-border-strong">·</span> live prices
           </span>
 
           <div className="ml-auto flex items-center gap-2">
@@ -68,11 +70,11 @@ export default function BuilderPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-[1400px] px-3 pt-4 pb-28 sm:px-6 lg:pb-10">
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-6">
+      <main className="mx-auto max-w-[1400px] px-3 pt-5 pb-28 sm:px-6 sm:pt-6 lg:pb-10">
+        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-6">
           <div className="min-w-0">
             {openPicker ? (
-              <div className="h-[calc(100dvh-8rem)] lg:h-[calc(100dvh-7.5rem)]">
+              <div className="h-[calc(100dvh-8.5rem)] lg:h-[calc(100dvh-8rem)]">
                 <PartPicker category={openPicker} />
               </div>
             ) : (
@@ -83,7 +85,7 @@ export default function BuilderPage() {
             )}
           </div>
 
-          <aside className="min-w-0 lg:sticky lg:top-[4.5rem] lg:self-start">
+          <aside className="min-w-0 lg:sticky lg:top-[5rem] lg:self-start">
             <BuildSummary report={report} />
           </aside>
         </div>

@@ -38,7 +38,7 @@ export function PartImage({
   return (
     <span
       className={cx(
-        'relative flex shrink-0 items-center justify-center overflow-hidden rounded-md border border-border bg-surface-2',
+        'relative flex shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-surface-3',
         className,
       )}
     >
@@ -72,7 +72,7 @@ export function PartImage({
           // through meanwhile; the opaque background then hides the icon rather
           // than letting it composite through a transparent product PNG.
           className={cx(
-            'absolute inset-0 h-full w-full bg-surface-2 object-contain transition-opacity duration-200',
+            'absolute inset-0 h-full w-full bg-surface-3 object-contain transition-opacity duration-200',
             loaded ? 'opacity-100' : 'opacity-0',
           )}
         />

@@ -57,8 +57,8 @@ export function BuildTable({ report }: { report: CompatReport }) {
         <colgroup>
           <col className="w-0 sm:w-48" />
           <col />
-          <col className="w-[80px] sm:w-28" />
-          <col className="w-[88px] sm:w-24" />
+          <col className="w-[80px] sm:w-32" />
+          <col className="w-[88px] sm:w-28" />
         </colgroup>
         <thead className="sr-only">
           <tr>
@@ -77,10 +77,10 @@ export function BuildTable({ report }: { report: CompatReport }) {
             if (rows.length === 0) {
               return (
                 <tr key={category} className="group border-b border-border/60 last:border-0">
-                  <td className="p-0 align-middle sm:py-2.5 sm:pr-2 sm:pl-4">
+                  <td className="p-0 align-middle sm:py-3.5 sm:pr-2 sm:pl-5">
                     <CategoryLabel category={category} flag={flag} />
                   </td>
-                  <td colSpan={3} className="py-2 pr-3 pl-3 sm:pr-4 sm:pl-0">
+                  <td colSpan={3} className="py-2.5 pr-3 pl-3 sm:pr-5 sm:pl-0">
                     <button
                       type="button"
                       onClick={() => openPickerFor(category)}
@@ -101,7 +101,7 @@ export function BuildTable({ report }: { report: CompatReport }) {
 
             return rows.map((line, index) => (
               <tr key={`${category}-${line.part.id}`} className="border-b border-border/60 last:border-0">
-                <td className="p-0 align-top sm:py-2.5 sm:pr-2 sm:pl-4">
+                <td className="p-0 align-top sm:py-3.5 sm:pr-2 sm:pl-5">
                   {index === 0 ? (
                     <CategoryLabel category={category} flag={flag} />
                   ) : (
@@ -109,7 +109,7 @@ export function BuildTable({ report }: { report: CompatReport }) {
                   )}
                 </td>
 
-                <td className="min-w-0 py-2.5 pr-2 pl-3 align-top sm:pl-0">
+                <td className="min-w-0 py-3 pr-2 pl-3 align-top sm:py-3.5 sm:pl-0">
                   {/* The category column is hidden on phones, so the label and
                       its status colour ride along with the part name instead. */}
                   <p className="mb-0.5 flex items-center gap-1.5 sm:hidden">
@@ -141,26 +141,26 @@ export function BuildTable({ report }: { report: CompatReport }) {
                   <button
                     type="button"
                     onClick={() => openPickerFor(category, line.part.id)}
-                    className="flex w-full items-start gap-2.5 text-left"
+                    className="flex w-full items-start gap-3 text-left"
                   >
                     <PartImage
                       partId={line.part.id}
                       category={category}
-                      className="mt-0.5 h-10 w-10"
+                      className="mt-0.5 hidden sm:flex sm:h-12 sm:w-12"
                       iconClassName="h-4 w-4"
                     />
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-sm font-medium transition-colors hover:text-accent">
                         <span className="text-text-muted">{line.part.brand}</span> {line.part.model}
                       </span>
-                      <span className="mt-0.5 block truncate text-[11px] text-text-muted">
+                      <span className="mt-1 block truncate text-[11px] text-text-muted">
                         {specSummary(line.part)}
                       </span>
                     </span>
                   </button>
                 </td>
 
-                <td className="py-2.5 pr-1 text-right align-top sm:pr-2">
+                <td className="py-3 pr-1 text-right align-top sm:py-3.5 sm:pr-3">
                   <PriceCell partId={line.part.id} seedPrice={line.part.seedPrice} />
                   {line.qty > 1 && (
                     <p className="tnum mt-0.5 text-[11px] text-text-muted">
@@ -169,7 +169,7 @@ export function BuildTable({ report }: { report: CompatReport }) {
                   )}
                 </td>
 
-                <td className="py-2.5 pr-2 align-top sm:pr-4">
+                <td className="py-3 pr-2 align-top sm:py-3.5 sm:pr-5">
                   <div className="flex items-center justify-end gap-0.5">
                     <Tooltip label="Swap this part" side="top">
                       <button

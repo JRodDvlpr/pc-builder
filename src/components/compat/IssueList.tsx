@@ -19,15 +19,15 @@ function IssueCard({ issue }: { issue: Issue }) {
   const openPickerFor = useBuild((s) => s.openPickerFor)
 
   return (
-    <li className={cx('rounded-xl border p-3', style.ring, style.bg)}>
+    <li className={cx('rounded-xl border p-3.5', style.ring, style.bg)}>
       <div className="flex gap-2.5">
         <StyleIcon className={cx('mt-0.5 h-4 w-4 shrink-0', style.text)} />
         <div className="min-w-0 flex-1">
           <p className={cx('text-[13px] leading-snug font-semibold', style.text)}>{issue.title}</p>
-          <p className="mt-1 text-[13px] leading-relaxed text-text-secondary">{issue.detail}</p>
+          <p className="mt-1.5 text-[13px] leading-relaxed text-text-secondary">{issue.detail}</p>
 
           {issue.partIds.length > 0 && (
-            <div className="mt-2 flex min-w-0 flex-wrap gap-1.5">
+            <div className="mt-2.5 flex min-w-0 flex-wrap gap-1.5">
               {[...new Set(issue.partIds)].map((partId) => {
                 const part = getPart(partId)
                 if (!part) return null
@@ -48,7 +48,7 @@ function IssueCard({ issue }: { issue: Issue }) {
           )}
 
           {issue.partIds.length === 0 && issue.categories.length > 0 && (
-            <div className="mt-2 flex min-w-0 flex-wrap gap-1.5">
+            <div className="mt-2.5 flex min-w-0 flex-wrap gap-1.5">
               {issue.categories.map((c) => (
                 <button
                   key={c}
@@ -100,7 +100,7 @@ export function IssueList({ report }: { report: CompatReport }) {
       </header>
 
       {total === 0 && infos.length === 0 ? (
-        <div className="rounded-xl border border-ok/25 bg-ok-soft p-3">
+        <div className="rounded-xl border border-ok/25 bg-ok-soft p-3.5">
           <p className="flex items-center gap-2 text-[13px] font-medium text-ok">
             <Icons.check className="h-4 w-4" />
             No compatibility problems found

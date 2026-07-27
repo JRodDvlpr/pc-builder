@@ -238,7 +238,7 @@ export function PartPicker({ category }: { category: Category }) {
         )}
         <aside
           className={cx(
-            'w-56 shrink-0 overflow-y-auto border-r border-border p-3',
+            'w-52 shrink-0 overflow-y-auto border-r border-border p-3',
             showFilters
               ? 'absolute inset-y-0 left-0 z-30 w-64 max-w-[85%] bg-surface shadow-float lg:static lg:z-auto lg:max-w-none lg:shadow-none'
               : 'hidden lg:block',
@@ -255,7 +255,7 @@ export function PartPicker({ category }: { category: Category }) {
             const options = facetOptions(scope, facet)
             if (options.length < 2) return null
             return (
-              <div key={facet.key} className="mb-4 last:mb-0">
+              <div key={facet.key} className="mb-3.5 last:mb-0">
                 <h3 className="mb-1.5 text-[11px] font-semibold tracking-wider text-text-muted uppercase">
                   {facet.label}
                 </h3>
@@ -266,7 +266,7 @@ export function PartPicker({ category }: { category: Category }) {
                       <li key={opt.value}>
                         <label
                           className={cx(
-                            'flex min-h-9 cursor-pointer items-center gap-2 rounded-md px-1.5 py-1.5 text-[13px] transition-colors sm:min-h-0 sm:py-1',
+                            'flex min-h-9 cursor-pointer items-center gap-2 rounded-md px-1.5 py-1.5 text-[13px] transition-colors sm:min-h-0 sm:py-0.5',
                             checked ? 'bg-accent-soft text-text' : 'text-text-secondary hover:bg-surface-2',
                           )}
                         >
@@ -293,16 +293,16 @@ export function PartPicker({ category }: { category: Category }) {
               is the column people scan, so it must never be the one that gets
               pushed off the edge by a long product name. */}
           <table className="w-full table-fixed border-collapse text-left">
-            <thead className="sticky top-0 z-10 bg-surface">
+            <thead className="sticky top-0 z-10 bg-surface-2">
               <tr className="border-b border-border text-[11px] tracking-wider text-text-muted uppercase">
                 <SortHeader
                   label="Part"
                   active={sortKey === 'name'}
                   dir={sortDir}
                   onClick={() => sortBy('name')}
-                  className="w-[46%] pl-3 sm:pl-4 md:w-[34%]"
+                  className="w-[46%] pl-3 sm:w-[38%] sm:pl-4 xl:w-[34%]"
                 />
-                {columns.map((c) => (
+                {columns.map((c, ci) => (
                   <SortHeader
                     key={c.key}
                     label={c.label}
@@ -310,7 +310,7 @@ export function PartPicker({ category }: { category: Category }) {
                     dir={sortDir}
                     numeric={c.numeric}
                     onClick={() => sortBy(c.key)}
-                    className="hidden md:table-cell"
+                    className={ci < 3 ? 'hidden sm:table-cell' : 'hidden lg:table-cell'}
                   />
                 ))}
                 <SortHeader
@@ -319,7 +319,7 @@ export function PartPicker({ category }: { category: Category }) {
                   dir={sortDir}
                   numeric
                   onClick={() => sortBy('price')}
-                  className="w-[26%] md:w-28"
+                  className="w-[26%] sm:w-28"
                 />
                 <th className="w-9 px-1 py-2" />
               </tr>
@@ -342,19 +342,19 @@ export function PartPicker({ category }: { category: Category }) {
                       blocked && 'opacity-45',
                     )}
                   >
-                    <td className="py-2 pr-2 pl-3 sm:pl-4">
+                    <td className="py-2 pr-2 pl-3 sm:py-1.5 sm:pl-4">
                       <div className="flex items-start gap-2">
                         <PartImage
                           partId={part.id}
                           category={category}
-                          className="mt-0.5 h-9 w-9"
+                          className="mt-0.5 hidden sm:flex sm:h-9 sm:w-9"
                           iconClassName="h-4 w-4"
                         />
                         <div className="min-w-0">
                           <p className="truncate text-[13px] leading-snug font-medium">
                             <span className="text-text-muted">{part.brand}</span> {part.model}
                           </p>
-                          <p className="mt-0.5 truncate text-[11px] text-text-muted md:hidden">
+                          <p className="mt-0.5 truncate text-[11px] text-text-muted sm:hidden">
                             {columns.slice(0, 3).map((c) => c.value(part)).join(' · ')}
                           </p>
                           {/* Touch has no hover, so the reason a part does not
@@ -364,7 +364,7 @@ export function PartPicker({ category }: { category: Category }) {
                           {(blocked || warned) && reason && (
                             <p
                               className={cx(
-                                'mt-1 text-[11px] leading-snug md:hidden',
+                                'mt-1 text-[11px] leading-snug sm:hidden',
                                 blocked ? 'text-danger' : 'text-warn',
                               )}
                             >
@@ -374,7 +374,7 @@ export function PartPicker({ category }: { category: Category }) {
                         </div>
                         {(blocked || warned) && reason && (
                           <Tooltip
-                            className="hidden shrink-0 md:inline-flex"
+                            className="hidden shrink-0 sm:inline-flex"
                             label={
                               <span>
                                 <span className="block font-medium">{reason.title}</span>
@@ -391,11 +391,12 @@ export function PartPicker({ category }: { category: Category }) {
                       </div>
                     </td>
 
-                    {columns.map((c) => (
+                    {columns.map((c, ci) => (
                       <td
                         key={c.key}
                         className={cx(
-                          'hidden truncate px-2 py-2 text-[13px] text-text-secondary md:table-cell',
+                          'hidden truncate px-1.5 py-1.5 text-[13px] text-text-secondary',
+                          ci < 3 ? 'sm:table-cell' : 'lg:table-cell',
                           c.numeric && 'tnum text-right',
                         )}
                       >
@@ -403,11 +404,11 @@ export function PartPicker({ category }: { category: Category }) {
                       </td>
                     ))}
 
-                    <td className="px-2 py-2 text-right">
+                    <td className="px-2 py-1.5 text-right">
                       <PriceCell partId={part.id} seedPrice={part.seedPrice} />
                     </td>
 
-                    <td className="px-1 py-2">
+                    <td className="px-1 py-1.5">
                       <span className="flex h-7 w-7 items-center justify-center rounded-md text-text-muted opacity-0 transition-opacity group-hover:opacity-100">
                         <Icons.plus className="h-4 w-4" />
                       </span>
@@ -490,7 +491,7 @@ function SortHeader({
   className?: string
 }) {
   return (
-    <th className={cx('px-2 py-2.5 font-medium sm:py-2', numeric && 'text-right', className)}>
+    <th className={cx('px-1.5 py-2.5 font-medium sm:py-2', numeric && 'text-right', className)}>
       <button
         type="button"
         onClick={onClick}
