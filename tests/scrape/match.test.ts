@@ -191,6 +191,95 @@ describe('rejecting the wrong listing', () => {
     expect(score).toBe(0)
   })
 
+  it('rejects an AC power cord sold under the monitor it fits', () => {
+    // Regression: this priced a $1,599 Dell UltraSharp at $8.88, because the
+    // cheapest offer wins and nothing rejected it.
+    expect(
+      scoreListing(
+        part('mon-dell-u4025qw'),
+        listing('AC Power Cord for Dell UltraSharp U4025QW U4323QE U4924DW Monitor 40" 43" | 3-Prong', 8.88),
+      ),
+    ).toBe(0)
+  })
+
+  it('rejects a replacement remote listed under the monitor', () => {
+    expect(
+      scoreListing(
+        part('mon-lg-27gs95qe'),
+        listing('PERFASCIN AKB76044701 Replaced Remote Control fit for LG Ultragear OLED QHD Monitor 27GR95QE', 11.76),
+      ),
+    ).toBe(0)
+  })
+
+  it('rejects a toy car that happens to share a part number', () => {
+    // "C8 BLACK" tokenises to `c8 · black`, which the MPN route took as proof.
+    // A part number has to look like one before it is trusted.
+    expect(
+      scoreListing(part('case-antec-c8'), listing('Matchbox 2020 Corvete C8, Black', 22.29)),
+    ).toBeLessThan(MATCH_THRESHOLD)
+  })
+
+  it('rejects the DDR4 board when the part is the DDR5 one', () => {
+    // Same model name, different product, $651.92 vs $139.99.
+    expect(
+      scoreListing(
+        part('mb-b760-tomahawk'),
+        listing('MSI MAG B760 TOMAHAWK WIFI DDR4 LGA 1700 (Intel12th&13th Gen) SATA 6Gb/s ATX Motherboard', 651.92),
+      ),
+    ).toBe(0)
+  })
+
+  it('still accepts the DDR5 board it is looking for', () => {
+    expect(
+      scoreListing(
+        part('mb-b760-tomahawk'),
+        listing('MSI MAG B760 Tomahawk WiFi Gaming Motherboard (LGA 1700, DDR5, PCIe 5.0, M.2)', 139.99),
+      ),
+    ).toBeGreaterThan(MATCH_THRESHOLD)
+  })
+
+  it('does not treat a power supply as a power cord', () => {
+    // A PSU listing is largely about its cables; the cable terms must not
+    // disqualify one, or the real $289 NZXT went out with the $8.88 cord.
+    expect(
+      scoreListing(
+        part('psu-nzxt-c850'),
+        listing('NZXT C850 - C Series ATX 850 Watt 80 Plus Gold v2 (2022) Full-modular Power Supply, US Power Cord', 289),
+      ),
+    ).toBeGreaterThan(MATCH_THRESHOLD)
+  })
+
+  it('still rejects a filter kit named after the case', () => {
+    // The PSU cable exemption must not leak into other categories.
+    expect(
+      scoreListing(
+        part('case-lancool-216'),
+        listing('Lian-li Lan216-2x Lancool 216 Dust Filter Kit Black Retail', 14.99),
+      ),
+    ).toBe(0)
+  })
+
+  it('tolerates a retailer that abbreviates the brand', () => {
+    // "Western Digital" ships as "WD_BLACK"; requiring the catalog spelling
+    // rejected 15 legitimate listings during calibration.
+    expect(
+      scoreListing(
+        part('ssd-sn850x-1tb'),
+        listing('WD_BLACK 1TB SN850X NVMe Internal Gaming SSD Solid State Drive - Gen4 PCIe, M.2 2280', 201.98),
+      ),
+    ).toBeGreaterThan(MATCH_THRESHOLD)
+  })
+
+  it('does not mistake socket support for an accessory listing', () => {
+    // "for AMD" / "for Intel" are compatibility statements on the real cooler.
+    expect(
+      scoreListing(
+        part('cool-nh-l9a'),
+        listing('Noctua NH-L9a-AM5 chromax.black, Premium Low-profile CPU Cooler for AMD AM5', 59.95),
+      ),
+    ).toBeGreaterThan(MATCH_THRESHOLD)
+  })
+
   it('penalises refurbished stock', () => {
     const newItem = listing('SAMSUNG 990 PRO SSD 1TB PCIe 4.0 M.2 2280 Internal Solid State Drive')
     const refurb = listing('Refurbished: SAMSUNG 990 PRO SSD 1TB PCIe 4.0 M.2 2280 Internal Solid State Drive')

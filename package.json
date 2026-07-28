@@ -13,7 +13,9 @@
     "seed:prices": "tsx scripts/seed-prices.ts",
     "refresh:prices": "tsx scripts/refresh-prices.ts",
     "export:images": "tsx scripts/export-images.ts",
-    "diagnose:match": "tsx scripts/diagnose-match.ts"
+    "diagnose:match": "tsx scripts/diagnose-match.ts",
+    "audit:prices": "tsx scripts/audit-prices.ts",
+    "rebaseline:prices": "tsx scripts/rebaseline-prices.ts"
   },
   "dependencies": {
     "better-sqlite3": "^13.0.1",

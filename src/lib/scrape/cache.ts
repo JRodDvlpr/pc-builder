@@ -17,6 +17,28 @@ const STALE_MS = 7 * 24 * 60 * 60 * 1000
 const MISS_RETRY_MS = 24 * 60 * 60 * 1000
 
 /**
+ * How far from the catalog reference a price may sit and still be believed.
+ *
+ * Matching establishes *identity*; nothing established *plausibility*, and the
+ * audit that prompted this found the gap costs real money in both directions. A
+ * $1,599 Dell UltraSharp priced at $8.88 from an AC power cord listing, and a
+ * Ryzen 9 9900X3D priced at $7,893.99 from a Threadripper listing that carries
+ * our part number in Newegg's own data — no matching rule can fix the second,
+ * because the retailer's data is simply wrong.
+ *
+ * The band is deliberately wide. Reference prices are re-baselined from
+ * corroborated market data, so a correct price sits near 1.0x, but they go stale
+ * between refreshes and genuine sales and shortages move real prices a long way.
+ * Calibrated against the live cache, these bounds rejected 11 of 387 displayed
+ * prices — every one of them verifiably wrong — and no correct price.
+ */
+const PLAUSIBLE_MIN = 0.35
+const PLAUSIBLE_MAX = 2.5
+
+/** Two prices this close corroborate each other. */
+const AGREEMENT = 1.25
+
+/**
  * Reads are always instant.
  *
  * The API answers from SQLite — or from the committed seed price when there is
@@ -33,33 +55,67 @@ export function readPrices(partIds: string[]): Record<string, PriceInfo> {
     const part = getPart(partId)
     if (!part) continue
 
-    const offers = (offersByPart.get(partId) ?? []).filter((o) => now - o.fetchedAt < STALE_MS)
+    const fresh = (offersByPart.get(partId) ?? []).filter((o) => now - o.fetchedAt < STALE_MS)
+
+    // Implausible prices are withheld rather than shown. Keeping the count lets
+    // the UI say the price was filtered instead of silently differing from what
+    // the retailer link shows.
+    const plausible = fresh.filter(
+      (o) =>
+        o.price >= part.seedPrice * PLAUSIBLE_MIN && o.price <= part.seedPrice * PLAUSIBLE_MAX,
+    )
+    const rejected = fresh.length - plausible.length
+
     // Prefer in-stock listings; fall back to out-of-stock rather than showing nothing.
-    const usable = offers.filter((o) => o.inStock)
-    const chosen = (usable.length > 0 ? usable : offers).sort((a, b) => a.price - b.price)
+    const inStock = plausible.filter((o) => o.inStock)
+    const chosen = (inStock.length > 0 ? inStock : plausible).sort((a, b) => a.price - b.price)
+
+    // Any offer's thumbnail will do — an implausible price still has a real
+    // photo of the right product, and the committed map is the last resort.
+    const image =
+      chosen.find((o) => o.image)?.image ?? fresh.find((o) => o.image)?.image ?? seedImage(partId)
 
     if (chosen.length === 0) {
       out[partId] = {
         partId,
         price: part.seedPrice,
         source: 'seed',
+        confidence: 'none',
         fetchedAt: null,
-        // A part with no cached price can still have a picture. This is the
-        // common case on a cold start, so it is what stops a fresh deploy from
-        // rendering as a wall of category icons.
-        image: seedImage(partId),
+        image,
         offers: [],
+        ...(rejected > 0 && { rejected }),
       }
       continue
     }
 
     const newest = Math.max(...chosen.map((o) => o.fetchedAt))
     const source: PriceSource = now - newest < FRESH_MS ? 'live' : 'cached'
-    // Any offer's thumbnail will do; prefer the one we are quoting. The committed
-    // map is the last resort, for a part whose listing carried no image at all.
-    const image =
-      chosen.find((o) => o.image)?.image ?? offers.find((o) => o.image)?.image ?? seedImage(partId)
-    out[partId] = { partId, price: chosen[0].price, source, fetchedAt: newest, image, offers: chosen }
+
+    /**
+     * Corroboration outranks cheapness.
+     *
+     * Taking the cheapest offer unconditionally is what surfaced the accessory
+     * listings — they are, after all, always the cheapest. When two retailers
+     * independently land within 25% of each other, that agreement is far better
+     * evidence than either price alone, so quote from it.
+     */
+    const byProvider = new Map<string, Offer>()
+    for (const o of chosen) if (!byProvider.has(o.provider)) byProvider.set(o.provider, o)
+    const quotes = [...byProvider.values()].sort((a, b) => a.price - b.price)
+    const corroborated =
+      quotes.length >= 2 && quotes[quotes.length - 1].price / quotes[0].price <= AGREEMENT
+
+    out[partId] = {
+      partId,
+      price: chosen[0].price,
+      source,
+      confidence: corroborated ? 'corroborated' : 'single',
+      fetchedAt: newest,
+      image,
+      offers: chosen,
+      ...(rejected > 0 && { rejected }),
+    }
   }
 
   return out

@@ -46,15 +46,27 @@ export interface Offer {
  */
 export type PriceSource = 'live' | 'cached' | 'seed'
 
+/**
+ * How much corroboration a displayed price has.
+ *
+ * `corroborated` — two retailers independently agree, the strongest evidence.
+ * `single`       — one plausible listing, believable but unverified.
+ * `none`         — no usable listing; the committed reference is shown.
+ */
+export type PriceConfidence = 'corroborated' | 'single' | 'none'
+
 export interface PriceInfo {
   partId: string
-  /** Lowest in-stock offer, or the seed price when there are none. */
+  /** Lowest plausible in-stock offer, or the seed price when there are none. */
   price: number
   source: PriceSource
+  confidence: PriceConfidence
   fetchedAt: number | null
   /** First product thumbnail found across this part's offers, if any. */
   image?: string
   offers: Offer[]
+  /** Offers withheld as implausible, so the UI can say the price was filtered. */
+  rejected?: number
 }
 
 export interface PriceResponse {

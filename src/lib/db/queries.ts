@@ -73,6 +73,22 @@ export function saveOffer(offer: Offer): void {
   }
 }
 
+/**
+ * Drop cached offers, so the next read re-scrapes from scratch.
+ *
+ * Needed whenever the matcher tightens: offers accepted under the old rules stay
+ * in the cache and keep being quoted, so a fix to the matching logic does not
+ * take effect until the bad rows are cleared. Pass the ids to purge selectively,
+ * or nothing to clear the lot.
+ */
+export function clearOffers(partIds?: string[]): number {
+  const db = getDb()
+  if (!partIds) return db.prepare('DELETE FROM offers').run().changes
+  if (partIds.length === 0) return 0
+  const holes = partIds.map(() => '?').join(',')
+  return db.prepare(`DELETE FROM offers WHERE part_id IN (${holes})`).run(...partIds).changes
+}
+
 export function logScrape(
   partId: string,
   provider: ProviderId,

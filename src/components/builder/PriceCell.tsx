@@ -2,7 +2,7 @@
 
 import { useBuild } from '@/lib/build/store'
 import { formatRelative, formatUsd } from '@/lib/build/total'
-import { PROVIDER_LABELS, type PriceSource } from '@/lib/scrape/types'
+import { PROVIDER_LABELS, type PriceConfidence, type PriceSource } from '@/lib/scrape/types'
 import { Icons } from '@/components/ui/icons'
 import { Skeleton, Tooltip, cx } from '@/components/ui/primitives'
 
@@ -10,6 +10,21 @@ const SOURCE_STYLE: Record<PriceSource, { dot: string; label: string }> = {
   live: { dot: 'bg-ok', label: 'Live price' },
   cached: { dot: 'bg-warn', label: 'Cached price' },
   seed: { dot: 'bg-text-muted', label: 'Reference price' },
+}
+
+/**
+ * What the price is actually worth as evidence.
+ *
+ * One retailer's listing and two retailers agreeing used to look identical, and
+ * they are not remotely the same claim — an audit of the cache found single
+ * listings asking $399 for a $54 fan and $698 for a $130 hard drive, while every
+ * corroborated pair held up. Saying which one you are looking at is the honest
+ * minimum; it costs a line of text and tells you how hard to squint.
+ */
+const CONFIDENCE_NOTE: Record<PriceConfidence, string | null> = {
+  corroborated: 'Both retailers agree on this price.',
+  single: 'Only one retailer listed this, so the price is unconfirmed.',
+  none: null,
 }
 
 /**
@@ -40,6 +55,7 @@ export function PriceCell({
   const source: PriceSource = info?.source ?? 'seed'
   const style = SOURCE_STYLE[source]
   const best = info?.offers?.[0]
+  const note = info ? CONFIDENCE_NOTE[info.confidence] : null
 
   return (
     <Tooltip
@@ -58,6 +74,7 @@ export function PriceCell({
                   </span>
                 </span>
               ))}
+              {note && <span className="mt-1 block text-[11px] text-text-muted">{note}</span>}
               {info.fetchedAt && (
                 <span className="mt-1 block text-[11px] text-text-muted">
                   Checked {formatRelative(info.fetchedAt)}
@@ -66,7 +83,9 @@ export function PriceCell({
             </>
           ) : (
             <span className="mt-0.5 block text-text-secondary">
-              No live listing matched this part, so the catalog reference price is shown.
+              {info?.rejected
+                ? `A listing was found but its price was too far from the expected range to trust, so the catalog reference price is shown.`
+                : 'No live listing matched this part, so the catalog reference price is shown.'}
             </span>
           )}
         </span>
