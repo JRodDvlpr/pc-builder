@@ -5,7 +5,7 @@ import { amazon } from './providers/amazon'
 import { newegg } from './providers/newegg'
 import { bestMatch, searchQueries } from './match'
 import { seedImage } from './seed-images'
-import type { Offer, PriceInfo, PriceProvider, PriceSource } from './types'
+import type { Offer, PriceInfo, PriceProvider, PriceSource, ProviderId } from './types'
 
 export const PROVIDERS: PriceProvider[] = [newegg, amazon]
 
@@ -139,11 +139,23 @@ export function needsRefresh(partIds: string[]): string[] {
 }
 
 /** Scrape one part across every provider. Resolves to the number of matches saved. */
-export async function refreshPart(part: Part, signal?: AbortSignal): Promise<number> {
+export async function refreshPart(
+  part: Part,
+  signal?: AbortSignal,
+  /**
+   * Restrict the scrape to these providers.
+   *
+   * Retailers fail independently, and so do their parsers: Amazon's result-card
+   * markup changed and cost it half its matches while Newegg was unaffected.
+   * Re-scraping only the provider that was broken avoids spending the other
+   * one's rate limit re-fetching prices that were already correct.
+   */
+  only?: ProviderId[],
+): Promise<number> {
   const queries = searchQueries(part)
   let matches = 0
 
-  for (const provider of PROVIDERS) {
+  for (const provider of PROVIDERS.filter((p) => !only || only.includes(p.id))) {
     let matched = false
     let error: string | undefined
 

@@ -1,6 +1,6 @@
 import * as cheerio from 'cheerio'
 
-import { fetchHtml } from '../http'
+import { ScrapeError, fetchHtml } from '../http'
 import type { PriceProvider, RawListing } from '../types'
 
 /**
@@ -41,9 +41,31 @@ export const amazon: PriceProvider = {
     const url = `https://www.amazon.com/s?k=${encodeURIComponent(query)}`
     const html = await fetchHtml(url, signal)
     const $ = cheerio.load(html)
+    const cards = $('[data-component-type="s-search-result"]')
+
+    /**
+     * A results page with no result cards means we were blocked, not that the
+     * product does not exist.
+     *
+     * Amazon answers a throttled request with HTTP 200 and a ~2 KB stub — long
+     * enough to clear the transport layer's short-body check, and structurally
+     * indistinguishable from an honest empty result. Returning `[]` recorded
+     * that as "searched, no match", which is a lie that compounds: the miss
+     * cool-off then suppressed retries for a day, and an audit of the cache
+     * concluded Amazon simply did not stock 57 CPUs it stocks perfectly well.
+     *
+     * Raising a retryable error instead lets the backoff and circuit breaker do
+     * their job and keeps the scrape log honest. We only ever search exact part
+     * numbers or brand-and-model, so a genuinely empty page is rare enough that
+     * treating it as a block is the safer default.
+     */
+    if (cards.length === 0) {
+      throw new ScrapeError('amazon returned no result cards — likely throttled', true)
+    }
+
     const listings: RawListing[] = []
 
-    $('[data-component-type="s-search-result"]').each((_, el) => {
+    cards.each((_, el) => {
       const item = $(el)
       const title = cardTitle($, el as never)
       if (!title) return

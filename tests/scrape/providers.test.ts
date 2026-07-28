@@ -8,7 +8,11 @@ import { describe, expect, it, vi } from 'vitest'
  * exactly what silently rots when a retailer restyles its results page.
  */
 
-vi.mock('@/lib/scrape/http', () => ({
+vi.mock('@/lib/scrape/http', async (importOriginal) => ({
+  // Only the network call is faked; ScrapeError and its retryable flag are real,
+  // since the point of the throttle test is that a genuine retryable error is
+  // raised rather than an empty result.
+  ...(await importOriginal<typeof import('@/lib/scrape/http')>()),
   fetchHtml: vi.fn(async () => fixture),
 }))
 
@@ -66,6 +70,18 @@ describe('amazon search results', () => {
     const [listing] = await amazon.search('Corsair HX1500i')
     expect(listing.title).toBe('Corsair HX1500i Fully Modular ATX Power Supply')
     expect(listing.price).toBe(239.99)
+  })
+
+  it('treats a page with no result cards as a block, not an empty result', async () => {
+    /*
+     * Amazon answers a throttled request with HTTP 200 and a ~2 KB stub, which
+     * clears the transport layer's short-body check. Returning [] recorded that
+     * as "searched, no match" — a false negative that then suppressed retries
+     * for a day and made an audit conclude Amazon stocked no CPUs at all.
+     */
+    fixture = `<html><body><div class="s-no-outline">${'x'.repeat(2000)}</div></body></html>`
+
+    await expect(amazon.search('AMD Ryzen 9 9950X3D')).rejects.toThrow(/throttled/i)
   })
 
   it('skips a card with no usable price rather than inventing one', async () => {

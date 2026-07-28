@@ -11,6 +11,17 @@ const REQUEST_TIMEOUT_MS = 12_000
 const MAX_RETRIES = 2
 /** Minimum spacing between requests to the same host. */
 const MIN_INTERVAL_MS = 2_000
+/**
+ * Hosts that need a gentler cadence than the default.
+ *
+ * Amazon tolerates a burst and then starts answering with a ~2 KB stub page for
+ * everything, including queries it served a minute earlier. Backing off after
+ * being blocked is too late — by then a whole bulk run has recorded false
+ * misses — so it gets a wider interval up front.
+ */
+const HOST_INTERVAL_MS: Record<string, number> = {
+  'www.amazon.com': 6_000,
+}
 /** Consecutive failures before a host is skipped entirely. */
 const BREAKER_THRESHOLD = 4
 const BREAKER_COOLDOWN_MS = 5 * 60_000
@@ -70,7 +81,8 @@ export async function fetchHtml(url: string, signal?: AbortSignal): Promise<stri
     const wait = state.nextAllowedAt - Date.now()
     if (wait > 0) await sleep(wait)
     // Jitter so parallel workers don't align into a burst.
-    state.nextAllowedAt = Date.now() + MIN_INTERVAL_MS + Math.random() * 500
+    const interval = HOST_INTERVAL_MS[host] ?? MIN_INTERVAL_MS
+    state.nextAllowedAt = Date.now() + interval + Math.random() * 500
 
     let lastError: unknown
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
