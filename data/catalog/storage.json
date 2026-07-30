@@ -1,6 +1,6 @@
 [
 {"id":"ssd-990pro-1tb","category":"storage","brand":"Samsung","model":"990 PRO 1TB","mpn":"MZ-V9P1T0B/AM","seedPrice":240,"interface":"NVMe","formFactor":"M.2-2280","capacityGb":1000,"readMbps":7450,"writeMbps":6900,"pcieVersion":4,"dram":true},
-{"id":"ssd-990pro-2tb","category":"storage","brand":"Samsung","model":"990 PRO 2TB","mpn":"MZ-V9P2T0B/AM","seedPrice":386,"interface":"NVMe","formFactor":"M.2-2280","capacityGb":2000,"readMbps":7450,"writeMbps":6900,"pcieVersion":4,"dram":true},
+{"id":"ssd-990pro-2tb","category":"storage","brand":"Samsung","model":"990 PRO 2TB","mpn":"MZ-V9P2T0B/AM","seedPrice":385,"interface":"NVMe","formFactor":"M.2-2280","capacityGb":2000,"readMbps":7450,"writeMbps":6900,"pcieVersion":4,"dram":true},
 {"id":"ssd-990pro-4tb","category":"storage","brand":"Samsung","model":"990 PRO 4TB","mpn":"MZ-V9P4T0B/AM","seedPrice":834,"interface":"NVMe","formFactor":"M.2-2280","capacityGb":4000,"readMbps":7450,"writeMbps":6900,"pcieVersion":4,"dram":true},
 {"id":"ssd-990evoplus-1tb","category":"storage","brand":"Samsung","model":"990 EVO Plus 1TB","mpn":"MZ-V9S1T0B/AM","seedPrice":267,"interface":"NVMe","formFactor":"M.2-2280","capacityGb":1000,"readMbps":7150,"writeMbps":6300,"pcieVersion":4,"dram":false},
 {"id":"ssd-990evoplus-2tb","category":"storage","brand":"Samsung","model":"990 EVO Plus 2TB","mpn":"MZ-V9S2T0B/AM","seedPrice":369,"interface":"NVMe","formFactor":"M.2-2280","capacityGb":2000,"readMbps":7250,"writeMbps":6300,"pcieVersion":4,"dram":false},
