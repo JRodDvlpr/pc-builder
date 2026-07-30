@@ -1,5 +1,7 @@
 'use client'
 
+import { useState } from 'react'
+
 import { useBuild } from '@/lib/build/store'
 import { buildLines, formatUsd } from '@/lib/build/total'
 import { isMulti } from '@/lib/build/types'
@@ -10,6 +12,7 @@ import { Icon, Icons } from '@/components/ui/icons'
 import { Button, Tooltip, cx } from '@/components/ui/primitives'
 import { PartImage } from './PartImage'
 import { PriceCell } from './PriceCell'
+import { CustomPrice, PriceEditor } from './PriceEditor'
 
 /**
  * The build itself: one row per category, always all ten visible so the shape of
@@ -28,6 +31,10 @@ export function BuildTable({ report }: { report: CompatReport }) {
   const openPickerFor = useBuild((s) => s.openPickerFor)
   const removePart = useBuild((s) => s.removePart)
   const setQty = useBuild((s) => s.setQty)
+  const setOwned = useBuild((s) => s.setOwned)
+  const setCustomPrice = useBuild((s) => s.setCustomPrice)
+  /** Part id whose price is being typed, if any — only ever one at a time. */
+  const [editing, setEditing] = useState<string | null>(null)
 
   const lines = buildLines(selection, prices)
 
@@ -55,10 +62,14 @@ export function BuildTable({ report }: { report: CompatReport }) {
           which shifts every subsequent width onto the wrong column.
         */}
         <colgroup>
-          <col className="w-0 sm:w-48" />
+          <col className="w-0 sm:w-44" />
           <col />
           <col className="w-[80px] sm:w-32" />
-          <col className="w-[88px] sm:w-28" />
+          {/* Wide enough for four 28px actions in a single row from `sm` up:
+              4×28 + 3×2 gap = 118px, plus the cell's 20px right padding. The
+              phone width is unchanged and deliberately too narrow for that,
+              where the 36px touch targets wrap to two rows instead. */}
+          <col className="w-[88px] sm:w-40" />
         </colgroup>
         <thead className="sr-only">
           <tr>
@@ -161,16 +172,85 @@ export function BuildTable({ report }: { report: CompatReport }) {
                 </td>
 
                 <td className="py-3 pr-1 text-right align-top sm:py-3.5 sm:pr-3">
-                  <PriceCell partId={line.part.id} seedPrice={line.part.seedPrice} />
+                  {editing === line.part.id ? (
+                    <PriceEditor
+                      category={category}
+                      partId={line.part.id}
+                      current={line.unitPrice}
+                      onClose={() => setEditing(null)}
+                    />
+                  ) : line.custom ? (
+                    <CustomPrice
+                      amount={line.unitPrice}
+                      owned={line.owned}
+                      label={line.part.model}
+                      onEdit={() => setEditing(line.part.id)}
+                      onReset={() => setCustomPrice(category, line.part.id, null)}
+                    />
+                  ) : (
+                    <span className={cx('inline-flex', line.owned && 'line-through opacity-60')}>
+                      <PriceCell partId={line.part.id} seedPrice={line.part.seedPrice} />
+                    </span>
+                  )}
+
                   {line.qty > 1 && (
                     <p className="tnum mt-0.5 text-[11px] text-text-muted">
                       ×{line.qty} = {formatUsd(line.lineTotal)}
                     </p>
                   )}
+                  {line.owned && (
+                    <p className="mt-0.5 text-[11px] font-medium text-ok">
+                      {/* The full phrase wraps to "not in / total" in the 80px
+                          price column on a phone; the strikethrough above
+                          already carries the meaning there. */}
+                      Owned<span className="hidden sm:inline"> · not in total</span>
+                    </p>
+                  )}
                 </td>
 
                 <td className="py-3 pr-2 align-top sm:py-3.5 sm:pr-5">
-                  <div className="flex items-center justify-end gap-0.5">
+                  {/* Wraps deliberately: four 36px touch targets do not fit the
+                      88px actions column on a phone, and letting them overflow
+                      is what pushed the table off-screen once before. Two rows
+                      of two is the graceful version of the same thing. */}
+                  <div className="flex flex-wrap items-center justify-end gap-0.5">
+                    <Tooltip
+                      label={
+                        line.owned
+                          ? 'Already owned — not counted in the total. Click to include it again.'
+                          : 'I already own this — leave it out of the total'
+                      }
+                      side="top"
+                    >
+                      <button
+                        type="button"
+                        onClick={() => setOwned(category, line.part.id, !line.owned)}
+                        aria-pressed={line.owned}
+                        className={cx(
+                          'flex h-9 w-9 items-center justify-center rounded-md transition-colors sm:h-7 sm:w-7',
+                          line.owned
+                            ? 'bg-ok-soft text-ok'
+                            : 'text-text-muted hover:bg-surface-2 hover:text-text',
+                        )}
+                        aria-label={
+                          line.owned
+                            ? `Include ${line.part.model} in the total`
+                            : `Mark ${line.part.model} as already owned`
+                        }
+                      >
+                        <Icons.owned className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
+                      </button>
+                    </Tooltip>
+                    <Tooltip label="Set your own price" side="top">
+                      <button
+                        type="button"
+                        onClick={() => setEditing(line.part.id)}
+                        className="flex h-9 w-9 items-center justify-center rounded-md text-text-muted transition-colors hover:bg-surface-2 hover:text-text sm:h-7 sm:w-7"
+                        aria-label={`Set a custom price for ${line.part.model}`}
+                      >
+                        <Icons.pencil className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
+                      </button>
+                    </Tooltip>
                     <Tooltip label="Swap this part" side="top">
                       <button
                         type="button"

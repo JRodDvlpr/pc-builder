@@ -3,7 +3,7 @@
 import { useState } from 'react'
 
 import { useBuild } from '@/lib/build/store'
-import { buildLines, buildTotal, formatUsd } from '@/lib/build/total'
+import { buildLines, buildTotal, formatUsd, ownedTotal } from '@/lib/build/total'
 import { countParts, encodeBuild, isEmptyBuild } from '@/lib/build/url'
 import type { CompatReport } from '@/lib/compat/types'
 import { IssueList } from '@/components/compat/IssueList'
@@ -19,6 +19,8 @@ export function BuildSummary({ report }: { report: CompatReport }) {
 
   const lines = buildLines(selection, prices)
   const total = buildTotal(lines)
+  const owned = ownedTotal(lines)
+  const ownedCount = lines.filter((l) => l.owned).reduce((n, l) => n + l.qty, 0)
   const empty = isEmptyBuild(selection)
   const partCount = countParts(selection)
 
@@ -42,7 +44,9 @@ export function BuildSummary({ report }: { report: CompatReport }) {
     <div className="space-y-5">
       <section className="rounded-2xl border border-border bg-surface p-5 shadow-card">
         <div className="flex items-baseline justify-between gap-2">
-          <h2 className="text-xs font-semibold tracking-wider text-text-muted uppercase">Total</h2>
+          <h2 className="text-xs font-semibold tracking-wider text-text-muted uppercase">
+            {ownedCount > 0 ? 'Still to buy' : 'Total'}
+          </h2>
           <span className="tnum text-[11px] text-text-muted">
             {partCount} part{partCount === 1 ? '' : 's'}
           </span>
@@ -53,6 +57,21 @@ export function BuildSummary({ report }: { report: CompatReport }) {
         >
           {formatUsd(total)}
         </p>
+
+        {/* Only shown once something is marked owned, so the common case keeps
+            the single uncluttered number it had before. */}
+        {ownedCount > 0 && (
+          <p
+            data-testid="owned-total"
+            className="mt-1.5 flex items-baseline justify-between gap-2 text-[12px] text-text-muted"
+          >
+            <span>
+              Already owned · {ownedCount} part{ownedCount === 1 ? '' : 's'}
+            </span>
+            <span className="tnum">{formatUsd(owned)}</span>
+          </p>
+        )}
+
         <p className="mt-2 text-[11px] leading-relaxed text-text-muted">
           Live prices from Newegg and Amazon where a listing matched; catalog reference
           prices otherwise. Excludes tax and shipping.

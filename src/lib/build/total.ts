@@ -9,6 +9,10 @@ export interface LineItem {
   qty: number
   unitPrice: number
   lineTotal: number
+  /** Already owned, so it adds nothing to what the build costs to finish. */
+  owned: boolean
+  /** The user replaced the market price with their own. */
+  custom: boolean
   /** Undefined until the price API has answered for this part. */
   priceInfo?: PriceInfo
 }
@@ -19,6 +23,9 @@ export interface LineItem {
  * Falls back to the committed seed price whenever a live or cached offer is
  * missing, so the running total is always a real number — a scraper outage
  * shows a stale badge, never a blank.
+ *
+ * A hand-entered price wins over every scraped one. The user knows what they
+ * paid, or what they found it for, better than we do.
  */
 export function buildLines(
   selection: BuildSelection,
@@ -30,13 +37,16 @@ export function buildLines(
       const part = getPart(item.partId)
       if (!part) continue
       const priceInfo = prices[item.partId]
-      const unitPrice = priceInfo?.price ?? part.seedPrice
+      const custom = item.customPrice !== undefined
+      const unitPrice = item.customPrice ?? priceInfo?.price ?? part.seedPrice
       lines.push({
         category,
         part,
         qty: item.qty,
         unitPrice,
         lineTotal: unitPrice * item.qty,
+        owned: item.owned === true,
+        custom,
         priceInfo,
       })
     }
@@ -44,8 +54,20 @@ export function buildLines(
   return lines
 }
 
+/**
+ * What the build still costs to finish.
+ *
+ * Parts the user already owns are excluded: the number that matters when you are
+ * standing at a checkout is what you have left to buy, not what the machine is
+ * worth. `ownedTotal` covers the other half for anyone who wants it.
+ */
 export function buildTotal(lines: LineItem[]): number {
-  return lines.reduce((sum, l) => sum + l.lineTotal, 0)
+  return lines.reduce((sum, l) => (l.owned ? sum : sum + l.lineTotal), 0)
+}
+
+/** Value of the parts already owned, for context beside the purchase total. */
+export function ownedTotal(lines: LineItem[]): number {
+  return lines.reduce((sum, l) => (l.owned ? sum + l.lineTotal : sum), 0)
 }
 
 export function formatUsd(n: number): string {

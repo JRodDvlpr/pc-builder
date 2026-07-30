@@ -37,13 +37,26 @@ test('no page ever scrolls sideways on a phone', async ({ page }) => {
   await page.goto(FULL_BUILD)
   await expect(page.getByLabel(/Increase quantity/).first()).toBeVisible()
   expect(await horizontalOverflow(page)).toBeLessThanOrEqual(1)
+
+  // An owned part adds a caption under the price and a hand-entered price adds
+  // two controls where there was one; both widen the narrowest columns.
+  await page.goto(`${FULL_BUILD.replace('cpu-9800x3d', 'cpu-9800x3d$1234.56!')}`)
+  await expect(page.getByText(/^Owned/).first()).toBeVisible()
+  expect(await horizontalOverflow(page)).toBeLessThanOrEqual(1)
 })
 
 test('price and row actions stay on screen in the build table', async ({ page }) => {
   await page.goto(FULL_BUILD)
   const vw = page.viewportSize()!.width
 
-  for (const name of [/Swap Ryzen 7 9800X3D/, /Remove Ryzen 7 9800X3D/]) {
+  for (const name of [
+    /Swap Ryzen 7 9800X3D/,
+    /Remove Ryzen 7 9800X3D/,
+    // Four actions do not fit the 88px column in one row, so they wrap. These
+    // assert the wrap actually happened rather than spilling off the edge.
+    /Mark Ryzen 7 9800X3D as already owned/,
+    /Set a custom price for Ryzen 7 9800X3D/,
+  ]) {
     const box = await page.getByLabel(name).first().boundingBox()
     expect(box, `${name} should be rendered`).not.toBeNull()
     expect(box!.x + box!.width).toBeLessThanOrEqual(vw)

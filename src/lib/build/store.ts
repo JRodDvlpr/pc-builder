@@ -23,6 +23,9 @@ interface BuildState {
   replacePart: (oldPartId: string, newPartId: string) => void
   removePart: (category: Category, partId: string) => void
   setQty: (category: Category, partId: string, qty: number) => void
+  setOwned: (category: Category, partId: string, owned: boolean) => void
+  /** Pass null to drop the override and go back to the market price. */
+  setCustomPrice: (category: Category, partId: string, price: number | null) => void
   clear: () => void
   loadFrom: (encoded: string | null) => void
 
@@ -98,6 +101,31 @@ export const useBuild = create<BuildState>((set, get) => ({
       selection[category] = selection[category].filter((i) => i.partId !== partId)
     } else {
       item.qty = Math.min(qty, 99)
+    }
+    syncUrl(selection)
+    set({ selection })
+  },
+
+  setOwned(category, partId, owned) {
+    const selection = structuredClone(get().selection)
+    const item = selection[category].find((i) => i.partId === partId)
+    if (!item) return
+    if (owned) item.owned = true
+    else delete item.owned
+    syncUrl(selection)
+    set({ selection })
+  },
+
+  setCustomPrice(category, partId, price) {
+    const selection = structuredClone(get().selection)
+    const item = selection[category].find((i) => i.partId === partId)
+    if (!item) return
+    if (price === null || !Number.isFinite(price) || price < 0) {
+      delete item.customPrice
+    } else {
+      // Two decimals is as precise as money gets here, and the ceiling keeps a
+      // stray keypress from turning the total into scientific notation.
+      item.customPrice = Math.min(Math.round(price * 100) / 100, 100_000)
     }
     syncUrl(selection)
     set({ selection })

@@ -93,6 +93,25 @@ export const Icons = {
       <path d="m4.5 12.5 5 5 10-11" />
     </Svg>
   ),
+  pencil: (p: IconProps) => (
+    <Svg {...p}>
+      <path d="M4 20h4L20 8l-4-4L4 16v4Z" />
+      <path d="m14.5 5.5 4 4" />
+    </Svg>
+  ),
+  undo: (p: IconProps) => (
+    <Svg {...p}>
+      <path d="M4 9h11a5 5 0 0 1 0 10h-6" />
+      <path d="m8 5-4 4 4 4" />
+    </Svg>
+  ),
+  /** A part the user already owns: a box with a tick. */
+  owned: (p: IconProps) => (
+    <Svg {...p}>
+      <path d="M20 8.5v8l-8 4.5-8-4.5v-8L12 4l8 4.5Z" />
+      <path d="m8.5 12 2.5 2.5 4.5-5" />
+    </Svg>
+  ),
   alert: (p: IconProps) => (
     <Svg {...p}>
       <path d="M12 3.5 2.5 20h19L12 3.5Z" />
